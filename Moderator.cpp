@@ -1,0 +1,407 @@
+
+#include "Moderator.h"
+
+Moderator::Moderator(QWidget *parent)
+    : QWidget(parent)
+{
+    this->setVisible(false);
+    //choose your directory
+    settings = new QSettings("Minds and Machines", "Connect Four");
+    AIFolder = new QString(settings->value("AI_DIRECTORY").toString());
+    //initialize control panel
+    controlPanel = new ControlPanel(this);
+    qDebug("here");
+
+    //initialize board
+    gameBoard = new Board();
+    //Player labels.
+    player1IsManual = true;
+    player2IsManual = true;
+
+    connect(controlPanel->chooseDirectoryText,SIGNAL(textEdited()),this,SLOT(directoryTextBoxEdited()));
+    connect(controlPanel->chooseDirectoryButton,SIGNAL(clicked()),this,SLOT(chooseDirectory()));
+    connect(controlPanel->player1FileName, SIGNAL(currentIndexChanged(int)), this, SLOT(loadPlayer1Program(int)));
+    connect(controlPanel->player2FileName, SIGNAL(currentIndexChanged(int)), this, SLOT(loadPlayer2Program(int)));
+    connect(controlPanel->timePerTurnTimer,SIGNAL(timeout()),this,SLOT(decrementTimePerTurnTimer()));
+    connect(controlPanel->timer, SIGNAL(timeout()), this, SLOT(updateTimer()));
+
+    //initializing game start/stop button
+    gamestate = GAME_STOPPED;
+    connect(controlPanel->go, SIGNAL(clicked()), this, SLOT(goButtonPressed()));
+    player1GoesFirst = true;
+    player1 = NULL;
+    player2 = NULL;
+}
+
+Moderator::~Moderator()
+{
+
+}
+
+void Moderator::chooseDirectory(){
+    QString folder = QFileDialog::getExistingDirectory(0,"Choose the folder where your AIs are located");
+    controlPanel->chooseDirectoryText->setText(folder);
+    AIFolder = new QString(folder);
+    settings->setValue("AI_DIRECTORY",folder);
+    controlPanel->populateComboBox1();
+    controlPanel->populateComboBox2();
+}
+
+void Moderator::directoryTextBoxEdited(){
+
+}
+
+bool Moderator::player1Move(int input){
+    bool retVal = true;
+    QPair<int,QPair<int,int> > player1Output = currentGame.playMove(input);
+    if(player1Output.first==-2){
+        console("Tie game.");
+        gameBoard->gameResult(0);
+       retVal =  false;
+    }
+    if(player1Output.first==-1){
+        console("Player 1 placed a piece in an invalid location.");
+        gameBoard->gameResult(1);
+       return false;
+    }
+    if(player1Output.first==0){
+        console("Player 1 wins!");
+        gameBoard->gameResult(2);
+       retVal = false;
+    }
+    gameBoard->place(player1Output.second.first,player1Output.second.second);
+    return retVal;
+
+}
+bool Moderator::player2Move(int input){
+    bool retVal = true;
+    QPair<int,QPair<int,int> > player2Output = currentGame.playMove(input);
+    if(player2Output.first==-2){
+        console("Tie game.");
+        gameBoard->gameResult(0);
+        retVal = false;
+    }
+    if(player2Output.first==-1){
+        console("Player 2 placed a piece in an invalid location.");
+        gameBoard->gameResult(1);
+       return false;
+    }
+    if(player2Output.first==0){
+        console("Player 2 wins!");
+        gameBoard->gameResult(2);
+       retVal = false;
+    }
+    gameBoard->place(player2Output.second.first,player2Output.second.second);
+    return retVal;
+
+}
+
+void Moderator::lookForMove(){
+    if(gamestate==PLAYER_1_TO_MOVE && player1MadeAMove){
+        int move = plyr1Move;
+        console(QString("Player 1's move: " + QString().setNum(move)));
+        QString moveChars = QString().setNum(move);
+        moveChars.append("\n");
+        if(player1Move(move)==false){
+            endGame();
+            return;
+        }
+        if(!player2IsManual)
+            player2->write(moveChars.toStdString().c_str());
+        player1MadeAMove = false;
+        gamestate = PLAYER_2_TO_MOVE;
+        controlPanel->player1TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
+        controlPanel->player2TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
+        timeUntilMove = controlPanel->timePerTurnSlider->sliderPosition() * 10;
+    }
+    if(gamestate==PLAYER_2_TO_MOVE && player2MadeAMove){
+        int move = plyr2Move;
+        console(QString("Player 2's move: " + QString().setNum(move)));
+        QString moveChars = QString().setNum(move);
+        moveChars.append("\n");
+        if(player2Move(move)==false){
+            endGame();
+            return;
+        }
+        if(!player1IsManual)
+            player1->write(moveChars.toStdString().c_str());
+        player2MadeAMove = false;
+        gamestate = PLAYER_1_TO_MOVE;
+        controlPanel->player1TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
+        controlPanel->player2TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
+        timeUntilMove = controlPanel->timePerTurnSlider->sliderPosition() * 10;
+    }
+}
+
+void Moderator::player1HasMoved(){
+    if(gamestate!=GAME_STOPPED){
+        player1MadeAMove = true;
+        char input;
+        player1->getChar(&input);
+        if(QString(input).toInt()<=0||QString(input).toInt()>7)
+            player2Wins();
+        plyr1Move = QString(input).toInt();
+    }
+}
+void Moderator::player2HasMoved(){
+    if(gamestate!=GAME_STOPPED){
+        player2MadeAMove = true;
+        char input;
+        player2->getChar(&input);
+        if(QString(input).toInt()<=0||QString(input).toInt()>7)
+            player1Wins();
+        plyr2Move = QString(input).toInt();
+    }
+}
+
+void Moderator::player1DroppedPiece(int col){
+    if(gamestate!=GAME_STOPPED){
+        player1MadeAMove = true;
+        plyr1Move = col;
+    }
+}
+void Moderator::player2DroppedPiece(int col){
+    player2MadeAMove = true;
+    plyr2Move = col;
+}
+
+void Moderator::player1Wins(){
+    gameBoard->gameResult(1);
+    console("PLAYER 1 WINS");
+    endGame();
+}
+void Moderator::player2Wins(){
+    gameBoard->gameResult(2);
+    console("PLAYER 2 WINS");
+    endGame();
+}
+
+void Moderator::endGame(){
+    QString moveString = currentGame.getMoveString() + '\n';
+    QString logFilePath = *AIFolder;
+    logFilePath+= "/log.txt";
+    qDebug() <<logFilePath;
+    QFile file(logFilePath);
+    file.open(QIODevice::WriteOnly | QIODevice::Append);
+    file.write(QByteArray(moveString.toStdString().c_str()));
+    file.close();
+    if(!player1IsManual){
+        player1->disconnect();
+        player1->close();
+    }
+    if(!player2IsManual){
+        player2->disconnect();
+        player2->close();
+    }
+    delete player1;
+    player1 = NULL;
+    delete player2;
+    player2 = NULL;
+    gamestate = GAME_STOPPED;
+    controlPanel->timePerTurnTimer->stop();
+    controlPanel->timer->stop();
+    controlPanel->player1FileName->setEnabled(true);
+    controlPanel->player2FileName->setEnabled(true);
+    controlPanel->player1TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
+    controlPanel->player2TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
+    controlPanel->resetGoButton();
+}
+
+void Moderator::goButtonPressed(){
+    if(gamestate==GAME_STOPPED){
+        if(goPlayer1Program(controlPanel->player1FileName->currentIndex())&&goPlayer2Program(controlPanel->player2FileName->currentIndex())){
+            controlPanel->setGoButton();
+            controlPanel->player1TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
+            controlPanel->player2TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
+            gameBoard->clearPieces();
+            if (player1GoesFirst) {
+                player1GoesFirst = false;
+                if(!player1IsManual){
+                    player1->write("1\n");
+                    player1->waitForBytesWritten();
+                }
+                if(!player2IsManual){
+                    player2->write("2\n");
+                    player2->waitForBytesWritten();
+                    gamestate=PLAYER_2_QUESTION_MARK;
+                }
+                else{
+                    gamestate=PLAYER_1_TO_MOVE;
+                }
+            }
+            else {
+                player1GoesFirst = true;
+                if(!player2IsManual){
+                    player2->write("1\n");
+                    player2->waitForBytesWritten();
+                }
+                if(!player1IsManual){
+                    player1->write("2\n");
+                    player1->waitForBytesWritten();
+                    gamestate=PLAYER_1_QUESTION_MARK;
+                }
+                else{
+                    gamestate=PLAYER_2_TO_MOVE;
+                }
+            }
+            if(gamestate==PLAYER_1_QUESTION_MARK){
+                player1->waitForReadyRead();
+                char input;
+                player1->getChar(&input);
+                if(input == '?'){
+                    gamestate = PLAYER_2_TO_MOVE;
+                }
+                else{
+                    console("Player 1 failed to output a '?', so player 1 wins.");
+                    player2Wins();
+                    return;
+                }
+            }
+            if(gamestate==PLAYER_2_QUESTION_MARK){
+                player2->waitForReadyRead();
+                char input;
+                player2->getChar(&input);
+                if(input == '?'){
+                    gamestate = PLAYER_1_TO_MOVE;
+                }
+                else{
+                    console("Player 2 failed to output a '?', so player 1 wins.");
+                    player1Wins();
+                    return;
+                }
+
+            }
+            controlPanel->player1FileName->setEnabled(false);
+            controlPanel->player2FileName->setEnabled(false);
+            player1MadeAMove = false;
+            player2MadeAMove = false;
+            if(!player1IsManual){
+                connect(player1,SIGNAL(readyReadStandardOutput()),this,SLOT(player1HasMoved()));
+                connect(player1,SIGNAL(readyRead()),this,SLOT(player1Debug()));
+            }
+            else{
+                connect(gameBoard,SIGNAL(pieceDroppedByPlayer(int)),this,SLOT(playerDroppedPiece(int)));
+            }
+            if(!player2IsManual){
+                connect(player2,SIGNAL(readyReadStandardOutput()),this,SLOT(player2HasMoved()));
+                connect(player2,SIGNAL(readyRead()),this,SLOT(player2Debug()));
+            }
+            else{
+                connect(gameBoard,SIGNAL(pieceDroppedByPlayer(int)),this,SLOT(playerDroppedPiece(int)));
+            }
+            timeUntilMove = controlPanel->timePerTurnSlider->sliderPosition() * 10;
+            controlPanel->timePerTurnTimer->start(10);
+            controlPanel->timer->start(10);
+            currentGame = Game();
+        }
+    }
+    else{
+        endGame();
+    }
+}
+
+bool Moderator::loadPlayer1Program(int boxIndex){
+
+    QString friendlyName = controlPanel->player1FileName->itemText(boxIndex);
+    QString progName = player1ProgramName;
+    QStringList args = player1ProgramArgs;
+    if(progName=="NONE_SELECTED") return false;
+    if(progName=="") return false;
+    if (player1 != NULL){
+        player1->disconnect();
+        player1->close();
+        delete player1;
+    }
+    if(progName!="MANUAL_MODE"){
+        player1IsManual = false;
+    }
+    else{
+        player1IsManual = true;
+    }
+    try{
+    player1 = new Player(player1IsManual,progName,args);
+    }
+    catch(bool){
+        loadFailed(progName);
+        return false;
+    }
+    console("Player " + friendlyName + " ready!");
+    return true;
+}
+
+bool Moderator::goPlayer1Program(int boxIndex){
+return loadPlayer1Program(boxIndex);
+}
+
+bool Moderator::loadPlayer2Program(int boxIndex){
+
+    QString friendlyName = controlPanel->player2FileName->itemText(boxIndex);
+    QString progName = player2ProgramName;
+    QStringList args = player2ProgramArgs;
+    if(progName=="NONE_SELECTED") return false;
+    if(progName=="") return false;
+    if (player2 != NULL){
+        player2->disconnect();
+        player2->close();
+        delete player2;
+    }
+    if(progName!="MANUAL_MODE"){
+        player2IsManual = false;
+    }
+    else{
+        player2IsManual = true;
+    }
+    try{
+    player2 = new Player(player2IsManual,progName,args);
+    }
+    catch(bool){
+        loadFailed(progName);
+        return false;
+    }
+    console("Player " + friendlyName + " ready!");
+    return true;
+}
+
+bool Moderator::goPlayer2Program(int boxIndex){
+    return loadPlayer2Program(boxIndex);
+}
+
+void Moderator::alert(QString message){
+    QMessageBox myBox;
+    myBox.setText(message);
+    myBox.exec();
+}
+
+void Moderator::loadFailed(QString player)
+{
+    QMessageBox fail;
+    QString message = "Player " + player + " failed to load!";
+    console(message);
+    fail.setText(message);
+    fail.exec();
+}
+
+void Moderator::console(QString message){
+    controlPanel->moveHistory->append(message);
+}
+
+void Moderator::decrementTimePerTurnTimer(){
+    timeUntilMove-=1;
+    if(timeUntilMove<=0){
+        lookForMove();
+    }
+}
+
+void Moderator::updateTimer()
+{
+    if (gamestate==PLAYER_1_TO_MOVE) {
+        controlPanel->player1TimeRemainingBar->setValue(controlPanel->player1TimeRemainingBar->value()-10);
+        if(controlPanel->player1TimeRemainingBar->value()<=0) player2Wins();
+    } else if (gamestate==PLAYER_2_TO_MOVE) {
+        controlPanel->player2TimeRemainingBar->setValue(controlPanel->player2TimeRemainingBar->value()-10);
+        if(controlPanel->player2TimeRemainingBar->value()<=0) player1Wins();
+
+    } else {
+        return;
+    }
+}

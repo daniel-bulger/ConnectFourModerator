@@ -1,0 +1,67 @@
+#ifndef MODERATOR_H
+#define MODERATOR_H
+#include "ControlPanel.h"
+#include "Game.h"
+#include "Board.h"
+#include "Player.h"
+#include <QtGui>
+#include <QtCore>
+class ControlPanel; // forward declaration
+class Moderator : public QWidget
+{
+    Q_OBJECT
+
+public:
+    Moderator(QWidget *parent = 0);
+    ~Moderator();
+    ControlPanel* controlPanel;
+    Board* gameBoard;
+    Game currentGame;
+    enum gamestates{GAME_STOPPED,PLAYER_1_TO_MOVE,PLAYER_2_TO_MOVE,PLAYER_1_QUESTION_MARK,PLAYER_2_QUESTION_MARK};
+    int gamestate;
+    QString* AIFolder;
+    int plyr1Move;
+    int plyr2Move;
+    int timeUntilMove;
+    QProcess* player1;
+    QProcess* player2;
+    bool player1GoesFirst;
+    bool player1MadeAMove;
+    bool player2MadeAMove;
+    QString player1ProgramName;
+    QString player2ProgramName;
+    QStringList player1ProgramArgs;
+    QStringList player2ProgramArgs;
+    QSettings* settings;
+    bool player1IsManual;
+    bool player2IsManual;
+    bool player1Move(int);
+    bool player2Move(int);
+    void lookForMove();
+    void alert(QString message);
+    void loadFailed(QString player);
+    void console(QString message);
+    void endGame();
+    void resetGoButton();
+    void player1Wins();
+    void player2Wins();
+
+    static const int MOVE_TIME_LIMIT = 10;
+
+ public slots:
+    void chooseDirectory();
+    void directoryTextBoxEdited();
+    void decrementTimePerTurnTimer();
+    void updateTimer();
+    void player1HasMoved();
+    void player2HasMoved();
+    void player1DroppedPiece(int col);
+    void player2DroppedPiece(int col);
+    void goButtonPressed();
+    bool loadPlayer1Program(int index);
+    bool loadPlayer2Program(int index);
+    bool goPlayer1Program(int index);
+    bool goPlayer2Program(int index);
+};
+
+#endif
