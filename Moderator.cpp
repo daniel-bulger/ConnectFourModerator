@@ -28,6 +28,8 @@ Moderator::Moderator(QWidget *parent)
     //initializing game start/stop button
     gamestate = GAME_STOPPED;
     connect(controlPanel->go, SIGNAL(clicked()), this, SLOT(goButtonPressed()));
+    connect(controlPanel->pause, SIGNAL(clicked()), this, SLOT(pauseButtonPressed()));
+
     player1GoesFirst = true;
     player1 = NULL;
     player2 = NULL;
@@ -313,6 +315,25 @@ void Moderator::goButtonPressed(){
     }
     else{
         endGame();
+    }
+}
+
+void Moderator::pauseButtonPressed(){
+    if(gamestate==PLAYER_1_TO_MOVE){
+        gamestate = GAME_PAUSED_PLAYER_1_TO_MOVE;
+        controlPanel->setPauseButton();
+    }
+    else if(gamestate==PLAYER_2_TO_MOVE){
+        gamestate = GAME_PAUSED_PLAYER_2_TO_MOVE;
+        controlPanel->setPauseButton();
+    }
+    else if(gamestate==GAME_PAUSED_PLAYER_1_TO_MOVE){
+        gamestate = PLAYER_1_TO_MOVE;
+        controlPanel->resetPauseButton();
+    }
+    else if(gamestate==GAME_PAUSED_PLAYER_2_TO_MOVE){
+        gamestate = PLAYER_2_TO_MOVE;
+        controlPanel->resetPauseButton();
     }
 }
 

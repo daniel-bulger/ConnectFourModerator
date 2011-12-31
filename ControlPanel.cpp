@@ -53,6 +53,9 @@ ControlPanel::ControlPanel(Moderator *theParent)
     QPalette pal = go->palette();
     pal.setColor(QPalette::ButtonText, Qt::darkGreen);
     go->setPalette(pal);
+    //initializing pause button
+    pause = new QPushButton("Pause");
+    pause->setVisible(false);
     //initializing layout of control panel.
     setWindowTitle(tr("Connect Four"));
     layout = new QVBoxLayout();
@@ -85,6 +88,7 @@ ControlPanel::ControlPanel(Moderator *theParent)
     layout->addLayout(player1Section);
     layout->addLayout(player2Section);
     layout->addLayout(delaySection);
+    layout->addWidget(pause);
     layout->addWidget(go);
     setLayout(layout);
     moveToStartingLocation();
@@ -149,12 +153,45 @@ void ControlPanel::resetGoButton(){
     pal.setColor(QPalette::ButtonText, Qt::darkGreen);
     go->setPalette(pal);
     go->setText("GO!");
+    hidePauseButton();
 }
 void ControlPanel::setGoButton(){
     go->setText("STOP!");
     QPalette pal = go->palette();
     pal.setColor(QPalette::ButtonText, Qt::red);
     go->setPalette(pal);
+    showPauseButton();
+}
+void ControlPanel::showPauseButton(){
+    resetPauseButton();
+    pause->setFixedHeight(50);
+    go->setFixedHeight(50);
+    pause->setVisible(true);
+}
+void ControlPanel::hidePauseButton(){
+    pause->setVisible(false);
+    go->setFixedHeight(100);
+}
+
+void ControlPanel::setPauseButton(){
+    pause->setText("Resume");
+    QFont pauseFont = pause->font();
+    pauseFont.setPointSize(36);
+    pauseFont.setBold(true);
+    pause->setFont(pauseFont);
+    QPalette pal = pause->palette();
+    pal.setColor(QPalette::ButtonText, Qt::darkGreen);
+    pause->setPalette(pal);
+}
+void ControlPanel::resetPauseButton(){
+    pause->setText("Pause");
+    QFont pauseFont = pause->font();
+    pauseFont.setPointSize(36);
+    pauseFont.setBold(true);
+    pause->setFont(pauseFont);
+    QPalette pal = pause->palette();
+    pal.setColor(QPalette::ButtonText, Qt::blue);
+    pause->setPalette(pal);
 }
 
 void ControlPanel::alert(QString message){

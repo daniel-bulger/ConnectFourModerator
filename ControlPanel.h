@@ -42,6 +42,7 @@ public:
     QProgressBar* player1TimeRemainingBar;
     QProgressBar* player2TimeRemainingBar;
     QPushButton* go;
+    QPushButton* pause;
     QImage* image;
     QLabel* ConnectFourBoard;
     QScrollArea* scrollArea;
@@ -52,13 +53,6 @@ public:
     QPushButton* chooseDirectoryButton;
     QLineEdit* chooseDirectoryText;
     QSettings* settings;
-    int plyr1Move;
-    int plyr2Move;
-    int timeUntilMove;
-    Game currentGame;
-    bool player1GoesFirst;
-    bool player1MadeAMove;
-    bool player2MadeAMove;
     QString player1ProgramName;
     QString player2ProgramName;
     QStringList player1ProgramArgs;
@@ -74,6 +68,10 @@ public:
     void endGame();
     void resetGoButton();
     void setGoButton();
+    void resetPauseButton();
+    void setPauseButton();
+    void showPauseButton();
+    void hidePauseButton();
     void player1Wins();
     void player2Wins();
 

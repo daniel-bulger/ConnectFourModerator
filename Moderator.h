@@ -17,7 +17,7 @@ public:
     ControlPanel* controlPanel;
     Board* gameBoard;
     Game currentGame;
-    enum gamestates{GAME_STOPPED,PLAYER_1_TO_MOVE,PLAYER_2_TO_MOVE,PLAYER_1_QUESTION_MARK,PLAYER_2_QUESTION_MARK};
+    enum gamestates{GAME_STOPPED,PLAYER_1_TO_MOVE,PLAYER_2_TO_MOVE,PLAYER_1_QUESTION_MARK,PLAYER_2_QUESTION_MARK,GAME_PAUSED_PLAYER_1_TO_MOVE,GAME_PAUSED_PLAYER_2_TO_MOVE};
     int gamestate;
     QString* AIFolder;
     int plyr1Move;
@@ -57,6 +57,7 @@ public:
     void player2HasMoved();
     void player1DroppedPiece(int col);
     void player2DroppedPiece(int col);
+    void pauseButtonPressed();
     void goButtonPressed();
     bool loadPlayer1Program(int index);
     bool loadPlayer2Program(int index);
