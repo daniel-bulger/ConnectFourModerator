@@ -97,23 +97,33 @@ bool Moderator::player2Move(int input){
 }
 
 void Moderator::lookForMove(){
+    if(gamestate==PLAYER_1_TO_MOVE)
+        player1HasMoved();
+    if(gamestate==PLAYER_2_TO_MOVE)
+        player2HasMoved();
     if(gamestate==PLAYER_1_TO_MOVE && player1MadeAMove){
         int move = plyr1Move;
         console(QString("Player 1's move: " + QString().setNum(move)));
         QString moveChars = QString().setNum(move);
         moveChars.append("\n");
+        qDebug() << moveChars;
+
         if(player1Move(move)==false){
             endGame();
             return;
         }
-        if(!player2IsManual)
+        if(!player2IsManual){
             player2->write(moveChars.toStdString().c_str());
+            player2->waitForBytesWritten();
+            qDebug() << "DOME" ;
+        }
         player1MadeAMove = false;
         gamestate = PLAYER_2_TO_MOVE;
         controlPanel->player1TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
         controlPanel->player2TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
         timeUntilMove = controlPanel->timePerTurnSlider->sliderPosition() * 10;
     }
+    else{
     if(gamestate==PLAYER_2_TO_MOVE && player2MadeAMove){
         int move = plyr2Move;
         console(QString("Player 2's move: " + QString().setNum(move)));
@@ -123,21 +133,28 @@ void Moderator::lookForMove(){
             endGame();
             return;
         }
-        if(!player1IsManual)
+        if(!player1IsManual){
             player1->write(moveChars.toStdString().c_str());
+            player1->waitForBytesWritten();
+        }
+
         player2MadeAMove = false;
         gamestate = PLAYER_1_TO_MOVE;
         controlPanel->player1TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
         controlPanel->player2TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
         timeUntilMove = controlPanel->timePerTurnSlider->sliderPosition() * 10;
     }
+    }
 }
 
 void Moderator::player1HasMoved(){
     if(gamestate!=GAME_STOPPED){
+        qDebug() << "MEH";
+        QString input = QString(player1->readAllStandardOutput());
+        if(input=="")
+            return;
         player1MadeAMove = true;
-        char input;
-        player1->getChar(&input);
+
         if(QString(input).toInt()<=0||QString(input).toInt()>7)
             player2Wins();
         plyr1Move = QString(input).toInt();
@@ -145,9 +162,13 @@ void Moderator::player1HasMoved(){
 }
 void Moderator::player2HasMoved(){
     if(gamestate!=GAME_STOPPED){
+        qDebug() << "MAAAAAAAAAAH";
+
+        QString input = QString(player2->readAllStandardOutput());
+        if(input=="")
+            return;
         player2MadeAMove = true;
-        char input;
-        player2->getChar(&input);
+
         if(QString(input).toInt()<=0||QString(input).toInt()>7)
             player1Wins();
         plyr2Move = QString(input).toInt();
@@ -245,23 +266,18 @@ void Moderator::goButtonPressed(){
                 }
             }
             if(gamestate==PLAYER_1_QUESTION_MARK){
-                player1->waitForReadyRead();
-                char input;
-                player1->getChar(&input);
-                if(input == '?'){
+                if(player1->getQuestionMark()){
                     gamestate = PLAYER_2_TO_MOVE;
                 }
                 else{
-                    console("Player 1 failed to output a '?', so player 1 wins.");
+                    console("Player 1 failed to output a '?', so player 2 wins.");
                     player2Wins();
                     return;
                 }
             }
             if(gamestate==PLAYER_2_QUESTION_MARK){
-                player2->waitForReadyRead();
-                char input;
-                player2->getChar(&input);
-                if(input == '?'){
+
+                if(player2->getQuestionMark()){
                     gamestate = PLAYER_1_TO_MOVE;
                 }
                 else{
@@ -277,14 +293,14 @@ void Moderator::goButtonPressed(){
             player2MadeAMove = false;
             if(!player1IsManual){
                 connect(player1,SIGNAL(readyReadStandardOutput()),this,SLOT(player1HasMoved()));
-                connect(player1,SIGNAL(readyRead()),this,SLOT(player1Debug()));
+                connect(player1,SIGNAL(readyReadStandardError()),this,SLOT(player1Debug()));
             }
             else{
                 connect(gameBoard,SIGNAL(pieceDroppedByPlayer(int)),this,SLOT(playerDroppedPiece(int)));
             }
             if(!player2IsManual){
                 connect(player2,SIGNAL(readyReadStandardOutput()),this,SLOT(player2HasMoved()));
-                connect(player2,SIGNAL(readyRead()),this,SLOT(player2Debug()));
+                connect(player2,SIGNAL(readyReadStandardError()),this,SLOT(player2Debug()));
             }
             else{
                 connect(gameBoard,SIGNAL(pieceDroppedByPlayer(int)),this,SLOT(playerDroppedPiece(int)));
@@ -306,6 +322,7 @@ bool Moderator::loadPlayer1Program(int boxIndex){
 bool Moderator::loadPlayer2Program(int boxIndex){
     return loadPlayerProgram(false,boxIndex);
 }
+
 bool Moderator::loadPlayerProgram(bool isPlayer1, int boxIndex){
     QComboBox* playerFileName;
     QString* progName;
@@ -365,9 +382,11 @@ bool Moderator::loadPlayerProgram(bool isPlayer1, int boxIndex){
     console("Player " + friendlyName + " ready!");
     return true;
 }
+
 bool Moderator::goPlayer1Program(int boxIndex){
 return loadPlayerProgram(true,boxIndex);
 }
+
 bool Moderator::goPlayer2Program(int boxIndex){
     return loadPlayerProgram(false,boxIndex);
 }

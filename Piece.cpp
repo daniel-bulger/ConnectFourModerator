@@ -27,7 +27,7 @@ Piece::Piece(int player, QGraphicsView *parent)
 void Piece::moveToCol(int col)
 {
     this->setX(OFFSET_LEFT+(COL_WIDTH+H_SPACING)*(col-1));
-    qDebug() << H_SPACING << endl;
+    qDebug() << col << endl;
 }
 
 void Piece::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
