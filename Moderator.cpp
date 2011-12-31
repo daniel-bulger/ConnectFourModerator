@@ -301,69 +301,75 @@ void Moderator::goButtonPressed(){
 }
 
 bool Moderator::loadPlayer1Program(int boxIndex){
-
-    QString friendlyName = controlPanel->player1FileName->itemText(boxIndex);
-    QString progName = player1ProgramName;
-    QStringList args = player1ProgramArgs;
-    if(progName=="NONE_SELECTED") return false;
-    if(progName=="") return false;
-    if (player1 != NULL){
-        player1->disconnect();
-        player1->close();
-        delete player1;
-    }
-    if(progName!="MANUAL_MODE"){
-        player1IsManual = false;
-    }
-    else{
-        player1IsManual = true;
-    }
-    try{
-    player1 = new Player(player1IsManual,progName,args);
-    }
-    catch(bool){
-        loadFailed(progName);
-        return false;
-    }
-    console("Player " + friendlyName + " ready!");
-    return true;
+    return loadPlayerProgram(true,boxIndex);
 }
-
-bool Moderator::goPlayer1Program(int boxIndex){
-return loadPlayer1Program(boxIndex);
-}
-
 bool Moderator::loadPlayer2Program(int boxIndex){
-
-    QString friendlyName = controlPanel->player2FileName->itemText(boxIndex);
-    QString progName = player2ProgramName;
-    QStringList args = player2ProgramArgs;
-    if(progName=="NONE_SELECTED") return false;
-    if(progName=="") return false;
-    if (player2 != NULL){
-        player2->disconnect();
-        player2->close();
-        delete player2;
-    }
-    if(progName!="MANUAL_MODE"){
-        player2IsManual = false;
+    return loadPlayerProgram(false,boxIndex);
+}
+bool Moderator::loadPlayerProgram(bool isPlayer1, int boxIndex){
+    QComboBox* playerFileName;
+    QString* progName;
+    QStringList* args;
+    Player* player;
+    bool* playerIsManual;
+    if(isPlayer1){
+        playerFileName = controlPanel->player1FileName;
+        progName = &player1ProgramName;
+        args = &player1ProgramArgs;
+        player = player1;
+        playerIsManual = &player1IsManual;
     }
     else{
-        player2IsManual = true;
+        playerFileName = controlPanel->player2FileName;
+        progName = &player2ProgramName;
+        args = &player2ProgramArgs;
+        player = player2;
+        playerIsManual = &player2IsManual;
     }
+
+    QString friendlyName = playerFileName->itemText(boxIndex);
+    *progName = playerFileName->itemData(playerFileName->currentIndex()).toString();
+    if(*progName=="NONE_SELECTED") return false;
+    if(*progName=="") return false;
+    if(*progName=="COMMAND_MODE"){
+        bool ok = false;
+        QString text = QInputDialog::getText(this, tr("Advanced program entry"),tr("Enter a command that will run your AI."), QLineEdit::Normal,"", &ok);
+        if(ok&&text!=""){
+            *progName = text.split(' ')[0];
+            *args = text.split(' ');
+            args->pop_front();
+
+        }
+    }
+
+    if(*progName!="MANUAL_MODE"){
+        *playerIsManual = false;
+    }
+    else{
+        *playerIsManual = true;
+    }
+
     try{
-    player2 = new Player(player2IsManual,progName,args);
+    player = new Player(*playerIsManual,*progName,*args);
+    if(isPlayer1){
+        player1 = player;
+    }
+    else{
+        player2 = player;
+    }
     }
     catch(bool){
-        loadFailed(progName);
+        loadFailed(*progName);
         return false;
     }
     console("Player " + friendlyName + " ready!");
     return true;
 }
-
+bool Moderator::goPlayer1Program(int boxIndex){
+return loadPlayerProgram(true,boxIndex);
+}
 bool Moderator::goPlayer2Program(int boxIndex){
-    return loadPlayer2Program(boxIndex);
+    return loadPlayerProgram(false,boxIndex);
 }
 
 void Moderator::alert(QString message){

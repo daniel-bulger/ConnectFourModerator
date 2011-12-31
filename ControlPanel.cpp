@@ -130,14 +130,14 @@ void ControlPanel::populateComboBox2(){
 }
 
 void ControlPanel::player1Debug(){
-    QString input = player1->readAllStandardError();
+    QString input = parent->player1->readAllStandardError();
     if(input!=""){
         input = "Player 1 says: " + input;
         console(input);
     }
 }
 void ControlPanel::player2Debug(){
-    QString input = player2->readAllStandardError();
+    QString input = parent->player2->readAllStandardError();
     if(input!=""){
         input = "Player 2 says: " + input;
         console(input);

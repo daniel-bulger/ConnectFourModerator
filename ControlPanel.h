@@ -56,8 +56,6 @@ public:
     int plyr2Move;
     int timeUntilMove;
     Game currentGame;
-    QProcess* player1;
-    QProcess* player2;
     bool player1GoesFirst;
     bool player1MadeAMove;
     bool player2MadeAMove;

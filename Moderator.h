@@ -23,8 +23,8 @@ public:
     int plyr1Move;
     int plyr2Move;
     int timeUntilMove;
-    QProcess* player1;
-    QProcess* player2;
+    Player* player1;
+    Player* player2;
     bool player1GoesFirst;
     bool player1MadeAMove;
     bool player2MadeAMove;
@@ -60,6 +60,7 @@ public:
     void goButtonPressed();
     bool loadPlayer1Program(int index);
     bool loadPlayer2Program(int index);
+    bool loadPlayerProgram(bool isPlayer1, int index);
     bool goPlayer1Program(int index);
     bool goPlayer2Program(int index);
 };
