@@ -2,13 +2,18 @@
 #define PLAYER_H
 
 #include <QProcess>
+#include <QtCore>
 
 class Player : public QProcess
 {
 public:
-    Player(bool manual, QString progName, QStringList args = QStringList());
+    bool isManual;
+    QString progName;
+    QStringList args;
+    Player(QString progName, QStringList args = QStringList());
     void startManual();
     bool getQuestionMark();
+    void parsePath();
 };
 
 #endif // PLAYER_H

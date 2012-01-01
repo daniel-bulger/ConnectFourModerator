@@ -14,9 +14,6 @@ Moderator::Moderator(QWidget *parent)
 
     //initialize board
     gameBoard = new Board();
-    //Player labels.
-    player1IsManual = true;
-    player2IsManual = true;
 
     connect(controlPanel->chooseDirectoryText,SIGNAL(textEdited()),this,SLOT(directoryTextBoxEdited()));
     connect(controlPanel->chooseDirectoryButton,SIGNAL(clicked()),this,SLOT(chooseDirectory()));
@@ -114,7 +111,7 @@ void Moderator::lookForMove(){
             endGame();
             return;
         }
-        if(!player2IsManual){
+        if(!player2->isManual){
             player2->write(moveChars.toStdString().c_str());
             player2->waitForBytesWritten();
             qDebug() << "DOME" ;
@@ -135,7 +132,7 @@ void Moderator::lookForMove(){
             endGame();
             return;
         }
-        if(!player1IsManual){
+        if(!player1->isManual){
             player1->write(moveChars.toStdString().c_str());
             player1->waitForBytesWritten();
         }
@@ -208,11 +205,11 @@ void Moderator::endGame(){
     file.open(QIODevice::WriteOnly | QIODevice::Append);
     file.write(QByteArray(moveString.toStdString().c_str()));
     file.close();
-    if(!player1IsManual){
+    if(!player1->isManual){
         player1->disconnect();
         player1->close();
     }
-    if(!player2IsManual){
+    if(!player2->isManual){
         player2->disconnect();
         player2->close();
     }
@@ -239,11 +236,11 @@ void Moderator::goButtonPressed(){
             gameBoard->clearPieces();
             if (player1GoesFirst) {
                 player1GoesFirst = false;
-                if(!player1IsManual){
+                if(!player1->isManual){
                     player1->write("1\n");
                     player1->waitForBytesWritten();
                 }
-                if(!player2IsManual){
+                if(!player2->isManual){
                     player2->write("2\n");
                     player2->waitForBytesWritten();
                     gamestate=PLAYER_2_QUESTION_MARK;
@@ -254,11 +251,11 @@ void Moderator::goButtonPressed(){
             }
             else {
                 player1GoesFirst = true;
-                if(!player2IsManual){
+                if(!player2->isManual){
                     player2->write("1\n");
                     player2->waitForBytesWritten();
                 }
-                if(!player1IsManual){
+                if(!player1->isManual){
                     player1->write("2\n");
                     player1->waitForBytesWritten();
                     gamestate=PLAYER_1_QUESTION_MARK;
@@ -293,14 +290,14 @@ void Moderator::goButtonPressed(){
             controlPanel->player2FileName->setEnabled(false);
             player1MadeAMove = false;
             player2MadeAMove = false;
-            if(!player1IsManual){
+            if(!player1->isManual){
                 connect(player1,SIGNAL(readyReadStandardOutput()),this,SLOT(player1HasMoved()));
                 connect(player1,SIGNAL(readyReadStandardError()),this,SLOT(player1Debug()));
             }
             else{
                 connect(gameBoard,SIGNAL(pieceDroppedByPlayer(int)),this,SLOT(playerDroppedPiece(int)));
             }
-            if(!player2IsManual){
+            if(!player2->isManual){
                 connect(player2,SIGNAL(readyReadStandardOutput()),this,SLOT(player2HasMoved()));
                 connect(player2,SIGNAL(readyReadStandardError()),this,SLOT(player2Debug()));
             }
@@ -346,49 +343,45 @@ bool Moderator::loadPlayer2Program(int boxIndex){
 
 bool Moderator::loadPlayerProgram(bool isPlayer1, int boxIndex){
     QComboBox* playerFileName;
-    QString* progName;
-    QStringList* args;
+    QString progName;
+    QStringList args;
     Player* player;
     bool* playerIsManual;
     if(isPlayer1){
+        if(player1!=NULL){
+            player1->disconnect();
+            player1->close();
+            delete player1;
+            player1 = NULL;
+        }
         playerFileName = controlPanel->player1FileName;
-        progName = &player1ProgramName;
-        args = &player1ProgramArgs;
-        player = player1;
-        playerIsManual = &player1IsManual;
     }
     else{
-        playerFileName = controlPanel->player2FileName;
-        progName = &player2ProgramName;
-        args = &player2ProgramArgs;
         player = player2;
-        playerIsManual = &player2IsManual;
+        if(player2!=NULL){
+            player2->disconnect();
+            player2->close();
+            delete player2;
+            player2 = NULL;
+        }
+        playerFileName = controlPanel->player2FileName;
     }
 
     QString friendlyName = playerFileName->itemText(boxIndex);
-    *progName = playerFileName->itemData(playerFileName->currentIndex()).toString();
-    if(*progName=="NONE_SELECTED") return false;
-    if(*progName=="") return false;
-    if(*progName=="COMMAND_MODE"){
+    progName = playerFileName->itemData(playerFileName->currentIndex()).toString();
+    if(progName=="NONE_SELECTED") return false;
+    if(progName=="") return false;
+    if(progName=="COMMAND_MODE"){
         bool ok = false;
         QString text = QInputDialog::getText(this, tr("Advanced program entry"),tr("Enter a command that will run your AI."), QLineEdit::Normal,"", &ok);
         if(ok&&text!=""){
-            *progName = text.split(' ')[0];
-            *args = text.split(' ');
-            args->pop_front();
-
+            progName = text.split(' ')[0];
+            args = text.split(' ');
+            args.pop_front();
         }
     }
-
-    if(*progName!="MANUAL_MODE"){
-        *playerIsManual = false;
-    }
-    else{
-        *playerIsManual = true;
-    }
-
     try{
-    player = new Player(*playerIsManual,*progName,*args);
+    player = new Player(progName,args);
     if(isPlayer1){
         player1 = player;
     }
@@ -397,8 +390,25 @@ bool Moderator::loadPlayerProgram(bool isPlayer1, int boxIndex){
     }
     }
     catch(bool){
-        loadFailed(*progName);
-        return false;
+        if(progName.endsWith(".exe")){
+            try{
+                player = new Player("wine",QStringList(progName));
+                if(isPlayer1){
+                    player1 = player;
+                }
+                else{
+                    player2 = player;
+                }
+            }
+            catch(bool){
+            loadFailed(progName);
+            return false;
+            }
+        }
+        else{
+            loadFailed(progName);
+            return false;
+        }
     }
     console("Player " + friendlyName + " ready!");
     return true;

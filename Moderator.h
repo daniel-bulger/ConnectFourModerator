@@ -28,13 +28,7 @@ public:
     bool player1GoesFirst;
     bool player1MadeAMove;
     bool player2MadeAMove;
-    QString player1ProgramName;
-    QString player2ProgramName;
-    QStringList player1ProgramArgs;
-    QStringList player2ProgramArgs;
     QSettings* settings;
-    bool player1IsManual;
-    bool player2IsManual;
     bool player1Move(int);
     bool player2Move(int);
     void lookForMove();
