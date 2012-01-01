@@ -218,4 +218,6 @@ void ControlPanel::moveToStartingLocation(){
 
 void ControlPanel::console(QString message){
     moveHistory->append(message);
+    QScrollBar *sb = moveHistory->verticalScrollBar();
+    sb->setValue(sb->maximum());
 }

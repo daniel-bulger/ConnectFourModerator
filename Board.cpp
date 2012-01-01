@@ -109,8 +109,8 @@ void Board::clearPieces()
 
 void Board::gameResult(int player)
 {
-    if (player+playerGoesFirst == (2)||player+playerGoesFirst == (4)) gameResultText->setText("PLAYER 1\n    WINS");
-    if (player+playerGoesFirst == (3)) gameResultText->setText("PLAYER 2\n    WINS");
+    if (player==1) gameResultText->setText("PLAYER 1\n    WINS");
+    if (player==2) gameResultText->setText("PLAYER 2\n    WINS");
     if (!player) gameResultText->setText("TIE");
 
     gameResultText->setPos(width()/2-gameResultText->boundingRect().width()/2, (height()/2)-gameResultText->boundingRect().height()/2);

@@ -40,11 +40,6 @@ QPair<int,QPair<int,int> > Game::playMove(int playerInput){
     int move = playerInput - 1; // we subtract 1 because the game uses 0-6 instead of 1-7 in its internal structure.
     if(move>-1&&move<7 && canPlacePiece(move)){
         placePiece(move);
-        if(getNumMoves()==42){
-            retVal.first = -2;
-            retVal.second = qMakePair(playerInput,getLastRowPlayed()+1);
-            return retVal;
-        }
     }
     else{
         retVal.first = -1;
@@ -54,6 +49,11 @@ QPair<int,QPair<int,int> > Game::playMove(int playerInput){
     if(getWinner(getLastColumnPlayed(),getLastRowPlayed(),true)){
         retVal.first = 0;
         retVal.second = qMakePair(getLastColumnPlayed()+1,getLastRowPlayed()+1);
+        return retVal;
+    }
+    if(getNumMoves()==42){
+        retVal.first = -2;
+        retVal.second = qMakePair(playerInput,getLastRowPlayed()+1);
         return retVal;
     }
     retVal.first = 1;

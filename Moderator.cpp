@@ -60,12 +60,12 @@ bool Moderator::player1Move(int input){
     }
     if(player1Output.first==-1){
         console("Player 1 placed a piece in an invalid location.");
-        gameBoard->gameResult(1);
+        gameBoard->gameResult(2);
        return false;
     }
     if(player1Output.first==0){
         console("Player 1 wins!");
-        gameBoard->gameResult(2);
+        gameBoard->gameResult(1);
        retVal = false;
     }
     gameBoard->place(player1Output.second.first,player1Output.second.second);
@@ -438,7 +438,7 @@ void Moderator::loadFailed(QString player)
 }
 
 void Moderator::console(QString message){
-    controlPanel->moveHistory->append(message);
+    controlPanel->console(message);
 }
 
 void Moderator::decrementTimePerTurnTimer(){
