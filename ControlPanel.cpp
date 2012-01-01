@@ -20,8 +20,8 @@ ControlPanel::ControlPanel(Moderator *theParent)
     player1FileName->setMinimumWidth(100);
     player2FileName = new QComboBox();
     player2FileName->setMinimumWidth(100);
-    populateComboBox1();
-    populateComboBox2();
+    populateComboBox(true);
+    populateComboBox(false);
     //initializing players' time remaining bars and time per turn slider
     player1TimeRemainingBar = new QProgressBar;
     player1TimeRemainingBar->setRange(0, MOVE_TIME_LIMIT*1000);
@@ -104,32 +104,24 @@ void ControlPanel::closeEvent(QCloseEvent *event){
   QApplication::quit();
 }
 
-void ControlPanel::populateComboBox1(){
-    player1FileName->clear();
-    player1FileName->insertItem(player1FileName->count(),"Choose...","NONE_SELECTED");
-    //player1FileName->insertItem(player1FileName->count(),"MANUAL","MANUAL_MODE");
-    player1FileName->insertItem(player1FileName->count(),"COMMAND","COMMAND_MODE");
-    QDirIterator it(*(parent->AIFolder), QDirIterator::Subdirectories);
-    while (it.hasNext()) {
-        QString next(it.next());
-        QStringList strings = next.split('/');
-        if(strings.last()!="."&&strings.last()!="..")
-        player1FileName->insertItem(player1FileName->count(), strings.last(),QVariant(QString(next)));
+void ControlPanel::populateComboBox(bool isPlayer1){
+    QComboBox* playerFileName;
+    if(isPlayer1){
+        playerFileName = player1FileName;
     }
-}
-void ControlPanel::populateComboBox2(){
-    player2FileName->clear();
-    player2FileName->insertItem(player2FileName->count(),"Choose...","NONE_SELECTED");
-    //player2FileName->insertItem(player2FileName->count(),"MANUAL","MANUAL_MODE");
-    player2FileName->insertItem(player2FileName->count(),"COMMAND","COMMAND_MODE");
-
+    else{
+        playerFileName = player2FileName;
+    }
+    playerFileName->clear();
+    playerFileName->insertItem(playerFileName->count(),"Choose...","NONE_SELECTED");
+    playerFileName->insertItem(playerFileName->count(),"MANUAL","MANUAL_MODE");
+    playerFileName->insertItem(playerFileName->count(),"COMMAND","COMMAND_MODE");
     QDirIterator it(*(parent->AIFolder), QDirIterator::Subdirectories);
     while (it.hasNext()) {
         QString next(it.next());
         QStringList strings = next.split('/');
         if(strings.last()!="."&&strings.last()!="..")
-        player2FileName->insertItem(player2FileName->count(), strings.last(),QVariant(QString(next)));
-
+        playerFileName->insertItem(playerFileName->count(), strings.last(),QVariant(QString(next)));
     }
 }
 

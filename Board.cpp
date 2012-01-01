@@ -1,13 +1,13 @@
 #include "Board.h"
+#include "Moderator.h"
 #include <QtGui>
 
-Board::Board(QObject *parent) :
+Board::Board(Moderator *parent) :parent(parent),
     QGraphicsView()
 {
     // Create the view and the scene!
     scene = new QGraphicsScene();
     this->setScene(scene);
-
     // Make it all cool and transparent and frameless and everything like that!
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -53,6 +53,12 @@ Board::Board(QObject *parent) :
     currentPlayer = 2;
     playerGoesFirst = 2;
     currentPiece = new Piece(currentPlayer, this);
+    OFFSET_LEFT   = (-1.5/1574.0)*(this->width());
+    COL_WIDTH     = (169.0/1574.0)*(this->width());
+    COL_HEIGHT    = COL_WIDTH;
+    H_SPACING     = (41.9/1574)*(this->width());
+    V_SPACING     = (21.5/1260.0)*(this->height());
+    OFFSET_BOTTOM = (68.0/1260)*(this->height());
 }
 
 void Board::place(int col, int row)
@@ -117,26 +123,43 @@ void Board::gameResult(int player)
     gameResultText->show();
 }
 
-/*void Board::mouseMoveEvent(QMouseEvent *event)
+void Board::mouseMoveEvent(QMouseEvent *event)
 {
     event->accept();
     // the worst col calculation formula EVER. rewrite this immediately
-    int col = ceil((event->x() - (0.0216*this->width())) * (0.957*this->height()/7));
-    //this->highlight(col);
+    int col = ceil((event->x()+OFFSET_LEFT-H_SPACING)/(COL_WIDTH+H_SPACING));
+    this->highlight(col);
 
 }
+void Board::mousePressEvent(QMouseEvent *event){
+    event->accept();
+    int col = ceil((event->x()+OFFSET_LEFT-H_SPACING)/(COL_WIDTH+H_SPACING));
+    if(col>6)
+        col = 6;
+    col+=1;
+    if(parent->gamestate==parent->PLAYER_1_TO_MOVE && parent->player1->isManual){
+        parent->plyr1Move = col;
+        parent->player1MadeAMove = true;
+    }
+    else if(parent->gamestate==parent->PLAYER_2_TO_MOVE && parent->player2->isManual){
+        parent->plyr2Move = col;
+        parent->player2MadeAMove = true;
+    }
+}
 
-/*void Board::highlight(int col)
+void Board::highlight(int col)
 {
-    int x = (0.0216*this->width()) + col * (0.957*this->height()/7);
-    this->highlightGraphic->move();
+    qDebug() << col;
+    int x = (OFFSET_LEFT+(COL_WIDTH+H_SPACING)*(col-1));
+    qDebug() << x;
+    //this->highlightGraphic->move(x);
 }
 
-/*
+
 void Board::moveEvent(QMoveEvent * event)
 {
     this->hide();
-}*/
+}
     /*************************************************
       KEEPING THIS AROUND JUST IN CASE!
       ************************************************

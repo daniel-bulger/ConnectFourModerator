@@ -68,6 +68,9 @@ int Game::getLastColumnPlayed(){
 int Game::getLastRowPlayed(){
   return rowFill[moves.back()]-1;
 }
+int Game::getColFill(int col){
+    return rowFill[col];
+}
 
 bool Game::getWinner(int col, int row, bool careAboutColor){
 

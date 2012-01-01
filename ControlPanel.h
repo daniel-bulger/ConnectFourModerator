@@ -80,8 +80,7 @@ public:
  public slots:
     void player1Debug();
     void player2Debug();
-    void populateComboBox1();
-    void populateComboBox2();
+    void populateComboBox(bool isPlayer1);
     void moveToStartingLocation();
 };
 

@@ -6,6 +6,7 @@
 #include "Player.h"
 #include <QtGui>
 #include <QtCore>
+class Board;
 class ControlPanel; // forward declaration
 class Moderator : public QWidget
 {

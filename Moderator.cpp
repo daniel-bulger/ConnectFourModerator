@@ -13,8 +13,7 @@ Moderator::Moderator(QWidget *parent)
     qDebug("here");
 
     //initialize board
-    gameBoard = new Board();
-
+    gameBoard = new Board(this);
     connect(controlPanel->chooseDirectoryText,SIGNAL(textEdited()),this,SLOT(directoryTextBoxEdited()));
     connect(controlPanel->chooseDirectoryButton,SIGNAL(clicked()),this,SLOT(chooseDirectory()));
     connect(controlPanel->player1FileName, SIGNAL(currentIndexChanged(int)), this, SLOT(loadPlayer1Program(int)));
@@ -42,8 +41,8 @@ void Moderator::chooseDirectory(){
     controlPanel->chooseDirectoryText->setText(folder);
     AIFolder = new QString(folder);
     settings->setValue("AI_DIRECTORY",folder);
-    controlPanel->populateComboBox1();
-    controlPanel->populateComboBox2();
+    controlPanel->populateComboBox(true);
+    controlPanel->populateComboBox(false);
 }
 
 void Moderator::directoryTextBoxEdited(){

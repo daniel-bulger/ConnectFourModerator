@@ -25,6 +25,7 @@ class Game
   void switchTurn(); //WARNING: WILL INVALIDATE BOARD
   void print();
   void printThreats();
+  int getColFill(int col);
   QString getMoveString();
   QVector<QVector<int> > threats;
 private:
