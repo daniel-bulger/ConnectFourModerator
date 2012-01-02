@@ -117,6 +117,12 @@ void Moderator::lookForMove(){
         }
         player1MadeAMove = false;
         gamestate = PLAYER_2_TO_MOVE;
+        if(!player2->isManual){
+            gameBoard->highlightGraphic->hide();
+        }
+        else{
+            gameBoard->mouseMoveEvent();
+        }
         controlPanel->player1TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
         controlPanel->player2TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
         timeUntilMove = controlPanel->timePerTurnSlider->sliderPosition() * 10;
@@ -138,6 +144,12 @@ void Moderator::lookForMove(){
 
         player2MadeAMove = false;
         gamestate = PLAYER_1_TO_MOVE;
+        if(!player1->isManual){
+            gameBoard->highlightGraphic->hide();
+        }
+        else{
+            gameBoard->mouseMoveEvent();
+        }
         controlPanel->player1TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
         controlPanel->player2TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
         timeUntilMove = controlPanel->timePerTurnSlider->sliderPosition() * 10;
@@ -442,7 +454,8 @@ void Moderator::console(QString message){
 
 void Moderator::decrementTimePerTurnTimer(){
     timeUntilMove-=1;
-    if(timeUntilMove<=0){
+    if((timeUntilMove<=0)||(gamestate==PLAYER_1_TO_MOVE)&&(player1->isManual)
+            ||(gamestate==PLAYER_2_TO_MOVE)&&(player2->isManual)){
         lookForMove();
     }
 }

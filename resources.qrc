@@ -3,5 +3,6 @@
         <file>board.png</file>
         <file>black.png</file>
         <file>red.png</file>
+        <file>Highlight.png</file>
     </qresource>
 </RCC>

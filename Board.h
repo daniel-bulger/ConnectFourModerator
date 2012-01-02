@@ -3,6 +3,8 @@
 
 #include <QtGui>
 #include "Piece.h"
+#include <QGraphicsObject>
+#include <QGraphicsView>
 class Moderator;
 class Board : public QGraphicsView
 {
@@ -12,8 +14,11 @@ public:
     void clearPieces();
     void place(int row, int col);
     void gameResult(int player);
+    void mouseMoveEvent(QMouseEvent *event = 0);
     void mousePressEvent(QMouseEvent *event);
-    void mouseMoveEvent(QMouseEvent *event);
+    bool eventFilter(QObject *, QEvent *);
+    void hoverExitEvent(QEvent *event);
+    void hoverEnterEvent(QEvent *event);
     void highlight(int col);
     void moveEvent(QMoveEvent * event);
     int OFFSET_LEFT;
@@ -24,11 +29,11 @@ public:
     int OFFSET_BOTTOM;
     Moderator* parent;
 
-protected:
     int currentPlayer;
     int playerGoesFirst;
     QGraphicsScene* scene;
     QGraphicsPixmapItem* board;
+    QGraphicsPixmapItem* highlightGraphic;
     Piece* currentPiece;
     QVector<Piece*> pieces;
     QVector<QPropertyAnimation*> animations;

@@ -33,14 +33,21 @@ Board::Board(Moderator *parent) :parent(parent),
     this->move(center_x - this->width()/2 + (total_width / 8),center_y - this->height()/2);
 
     // Track the mouse wherever it goes!
-    this->setMouseTracking(true);
+    //this->setMouseTracking(true);
 
     // Paint the picture of the board
     QPixmap boardImage(":/images/board.png");
     QPixmap scaledBoardImage = boardImage.scaled(this->size(), Qt::KeepAspectRatio);
+    QPixmap highlightImage(":/images/Highlight.png");
+    QPixmap scaledHighlightImage = highlightImage.scaled(this->size(), Qt::KeepAspectRatio);
+    highlightGraphic = new QGraphicsPixmapItem(scaledHighlightImage);
     board = new QGraphicsPixmapItem(scaledBoardImage);
+    board->setAcceptsHoverEvents(true);
+    board->setAcceptHoverEvents(true);
+    scene->installEventFilter(this);
+    scene->addItem(highlightGraphic);
+    highlightGraphic->hide();
     scene->addItem(board);
-
     gameResultText = new QGraphicsSimpleTextItem();
     gameResultText->setBrush(QBrush(Qt::white));
     QFont font = QFont("Arial Black", 100);
@@ -122,15 +129,53 @@ void Board::gameResult(int player)
     gameResultText->setPos(width()/2-gameResultText->boundingRect().width()/2, (height()/2)-gameResultText->boundingRect().height()/2);
     gameResultText->show();
 }
-
 void Board::mouseMoveEvent(QMouseEvent *event)
 {
-    event->accept();
-    // the worst col calculation formula EVER. rewrite this immediately
-    int col = ceil((event->x()+OFFSET_LEFT-H_SPACING)/(COL_WIDTH+H_SPACING));
-    this->highlight(col);
-
+    int x;
+    if(event==0){
+        x = this->mapFromGlobal(QCursor::pos()).x();
+    }
+    else{
+        x = event->x();
+    }
+    if((parent->gamestate==parent->PLAYER_1_TO_MOVE && parent->player1->isManual)||
+            (parent->gamestate==parent->PLAYER_2_TO_MOVE && parent->player2->isManual)){
+        int col = ceil((x+OFFSET_LEFT-H_SPACING)/(COL_WIDTH+H_SPACING));
+        if(col>6)
+            col = 6;
+        if(col<0)
+            col = 0;
+        col+=1;
+        this->highlight(col);
+    }
 }
+bool Board::eventFilter(QObject *object, QEvent *event)
+ {
+//qobject_cast<QGraphicsItem*>(object) == board)
+     if(event->type() == QEvent::Enter) {
+         qDebug() << "Enter";
+         hoverEnterEvent((event));
+     }
+     if (event->type() == QEvent::Leave) {
+         qDebug() << "exit";
+         hoverExitEvent(event);
+     }
+    return false;
+ }
+void Board::hoverEnterEvent(QEvent *event)
+{
+    if(parent->gamestate==parent->PLAYER_1_TO_MOVE && parent->player1->isManual){
+        highlightGraphic->show();
+    }
+    else if(parent->gamestate==parent->PLAYER_2_TO_MOVE && parent->player2->isManual){
+        highlightGraphic->show();
+    }
+}
+void Board::hoverExitEvent(QEvent *event)
+{
+    highlightGraphic->hide();
+}
+
 void Board::mousePressEvent(QMouseEvent *event){
     event->accept();
     int col = ceil((event->x()+OFFSET_LEFT-H_SPACING)/(COL_WIDTH+H_SPACING));
@@ -150,9 +195,10 @@ void Board::mousePressEvent(QMouseEvent *event){
 void Board::highlight(int col)
 {
     qDebug() << col;
-    int x = (OFFSET_LEFT+(COL_WIDTH+H_SPACING)*(col-1));
+    int x = (H_SPACING+OFFSET_LEFT+(COL_WIDTH+H_SPACING)*(col-1));
     qDebug() << x;
-    //this->highlightGraphic->move(x);
+    this->highlightGraphic->setPos(x,0);
+    highlightGraphic->show();
 }
 
 
