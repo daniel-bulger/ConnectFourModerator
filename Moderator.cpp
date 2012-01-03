@@ -2,13 +2,14 @@
 #include "Moderator.h"
 
 Moderator::Moderator(QWidget *parent)
-    : QWidget(parent)
+    : QMainWindow(parent)
 {
     this->setVisible(false);
     //choose your directory
     settings = new QSettings("Minds and Machines", "Connect Four");
     AIFolder = new QString(settings->value("AI_DIRECTORY").toString());
     //initialize control panel
+    gameBoard = NULL;
     controlPanel = new ControlPanel(this);
     qDebug("here");
 
@@ -454,8 +455,8 @@ void Moderator::console(QString message){
 
 void Moderator::decrementTimePerTurnTimer(){
     timeUntilMove-=1;
-    if((timeUntilMove<=0)||(gamestate==PLAYER_1_TO_MOVE)&&(player1->isManual)
-            ||(gamestate==PLAYER_2_TO_MOVE)&&(player2->isManual)){
+    if((timeUntilMove<=0)||((gamestate==PLAYER_1_TO_MOVE)&&(player1->isManual)
+            )||((gamestate==PLAYER_2_TO_MOVE)&&(player2->isManual))){
         lookForMove();
     }
 }

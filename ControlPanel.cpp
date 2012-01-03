@@ -4,6 +4,14 @@ ControlPanel::ControlPanel(Moderator *theParent)
     : QWidget(0)
 {
     parent = theParent;
+    //init menu bar
+    menuBar = new QMenuBar(this);
+    fileMenu = menuBar->addMenu("File");
+    fileMenu->addAction("Change AI dir",parent,SLOT(chooseDirectory()));
+    fileMenu->addSeparator();
+    fileMenu->addAction("Exit",this,SLOT(close()));
+    helpMenu = menuBar->addMenu("Help");
+
     //initialize move history test area.
     layout = new QVBoxLayout();
     moveHistory = new QTextEdit("Welcome to Connect Four!  There will be instructions here at some point.");
@@ -58,12 +66,9 @@ ControlPanel::ControlPanel(Moderator *theParent)
     pause->setVisible(false);
     //initializing layout of control panel.
     setWindowTitle(tr("Connect Four"));
-    layout = new QVBoxLayout();
-    layout->addWidget(moveHistory);
     chooseDirectorySection = new QHBoxLayout();
     chooseDirectorySection->addWidget(chooseDirectoryButton);
     chooseDirectorySection->addWidget(chooseDirectoryText);
-    layout->addLayout(chooseDirectorySection);
     player1Input = new QHBoxLayout();
     player2Input = new QHBoxLayout();
     player1Status = new QHBoxLayout();
@@ -85,6 +90,10 @@ ControlPanel::ControlPanel(Moderator *theParent)
     player2Status->addWidget(player2TimeRemainingLabel);
     player1Status->addWidget(player1TimeRemainingBar);
     player2Status->addWidget(player2TimeRemainingBar);
+    layout = new QVBoxLayout(this);
+    layout->setMenuBar(menuBar);
+    layout->addWidget(moveHistory);
+    layout->addLayout(chooseDirectorySection);
     layout->addLayout(player1Section);
     layout->addLayout(player2Section);
     layout->addLayout(delaySection);
@@ -213,3 +222,4 @@ void ControlPanel::console(QString message){
     QScrollBar *sb = moveHistory->verticalScrollBar();
     sb->setValue(sb->maximum());
 }
+

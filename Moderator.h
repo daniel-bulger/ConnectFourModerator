@@ -8,7 +8,7 @@
 #include <QtCore>
 class Board;
 class ControlPanel; // forward declaration
-class Moderator : public QWidget
+class Moderator : public QMainWindow
 {
     Q_OBJECT
 

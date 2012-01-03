@@ -16,6 +16,7 @@ public:
     void gameResult(int player);
     void mouseMoveEvent(QMouseEvent *event = 0);
     void mousePressEvent(QMouseEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event);
     bool eventFilter(QObject *, QEvent *);
     void hoverExitEvent(QEvent *event);
     void hoverEnterEvent(QEvent *event);
@@ -27,6 +28,8 @@ public:
     int H_SPACING;
     float V_SPACING;
     int OFFSET_BOTTOM;
+    QPoint lastMousePos;
+    bool isMoving;
     Moderator* parent;
 
     int currentPlayer;

@@ -5,6 +5,7 @@
 #include "Moderator.h"
 #include <QtGui>
 #include <QtCore>
+#include <QMainWindow>
 class Moderator;  // forward declaration
 class ControlPanel : public QWidget
 {
@@ -52,6 +53,11 @@ public:
     QTimer* timer;
     QPushButton* chooseDirectoryButton;
     QLineEdit* chooseDirectoryText;
+    QMenuBar* menuBar;
+
+    QMenu* fileMenu;
+    QMenu* helpMenu;
+
     QSettings* settings;
     QString player1ProgramName;
     QString player2ProgramName;
@@ -74,7 +80,6 @@ public:
     void hidePauseButton();
     void player1Wins();
     void player2Wins();
-
     static const int MOVE_TIME_LIMIT = 10;
 
  public slots:

@@ -129,8 +129,16 @@ void Board::gameResult(int player)
     gameResultText->setPos(width()/2-gameResultText->boundingRect().width()/2, (height()/2)-gameResultText->boundingRect().height()/2);
     gameResultText->show();
 }
+
 void Board::mouseMoveEvent(QMouseEvent *event)
 {
+    if(event!=0){
+        if( event->buttons().testFlag(Qt::LeftButton) && isMoving)
+    {
+        this->move(this->pos() + (event->globalPos() - lastMousePos));
+        lastMousePos = event->globalPos();
+    }
+    }
     int x;
     if(event==0){
         x = this->mapFromGlobal(QCursor::pos()).x();
@@ -148,6 +156,7 @@ void Board::mouseMoveEvent(QMouseEvent *event)
         col+=1;
         this->highlight(col);
     }
+
 }
 bool Board::eventFilter(QObject *object, QEvent *event)
  {
@@ -190,6 +199,15 @@ void Board::mousePressEvent(QMouseEvent *event){
         parent->plyr2Move = col;
         parent->player2MadeAMove = true;
     }
+    if(event->button() == Qt::LeftButton)
+    {
+        isMoving = true;
+        lastMousePos = event->globalPos();
+    }
+}
+void Board::mouseReleaseEvent(QMouseEvent* event){
+    if(event->button() == Qt::LeftButton)
+        isMoving = false;
 }
 
 void Board::highlight(int col)
