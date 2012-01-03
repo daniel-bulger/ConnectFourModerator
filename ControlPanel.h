@@ -57,7 +57,9 @@ public:
 
     QMenu* fileMenu;
     QMenu* helpMenu;
-
+    QMenu* preferencesMenu;
+    QAction* boardLockedPreference;
+    QAction* doubleClickToPlacePiecePreference;
     QSettings* settings;
     QString player1ProgramName;
     QString player2ProgramName;

@@ -5,6 +5,7 @@
 Board::Board(Moderator *parent) :parent(parent),
     QGraphicsView()
 {
+    isMoving = false;
     // Create the view and the scene!
     scene = new QGraphicsScene();
     this->setScene(scene);
@@ -184,6 +185,15 @@ void Board::hoverExitEvent(QEvent *event)
 {
     highlightGraphic->hide();
 }
+void Board::mouseDoubleClickEvent(QMouseEvent *event){
+    event->accept();
+    int col = ceil((event->x()+OFFSET_LEFT-H_SPACING)/(COL_WIDTH+H_SPACING));
+    if(col>6)
+        col = 6;
+    col+=1;
+    if(parent->controlPanel->doubleClickToPlacePiecePreference->isChecked())
+        placePieceIfManual(col);
+}
 
 void Board::mousePressEvent(QMouseEvent *event){
     event->accept();
@@ -191,6 +201,15 @@ void Board::mousePressEvent(QMouseEvent *event){
     if(col>6)
         col = 6;
     col+=1;
+    if(!parent->controlPanel->doubleClickToPlacePiecePreference->isChecked())
+        placePieceIfManual(col);
+    if((event->button() == Qt::LeftButton)&&(!parent->controlPanel->boardLockedPreference->isChecked()))
+    {
+        isMoving = true;
+        lastMousePos = event->globalPos();
+    }
+}
+void Board::placePieceIfManual(int col){
     if(parent->gamestate==parent->PLAYER_1_TO_MOVE && parent->player1->isManual){
         parent->plyr1Move = col;
         parent->player1MadeAMove = true;
@@ -199,12 +218,8 @@ void Board::mousePressEvent(QMouseEvent *event){
         parent->plyr2Move = col;
         parent->player2MadeAMove = true;
     }
-    if(event->button() == Qt::LeftButton)
-    {
-        isMoving = true;
-        lastMousePos = event->globalPos();
-    }
 }
+
 void Board::mouseReleaseEvent(QMouseEvent* event){
     if(event->button() == Qt::LeftButton)
         isMoving = false;

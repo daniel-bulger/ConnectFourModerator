@@ -15,7 +15,9 @@ public:
     void place(int row, int col);
     void gameResult(int player);
     void mouseMoveEvent(QMouseEvent *event = 0);
+    void mouseDoubleClickEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);
+    void placePieceIfManual(int col);
     void mouseReleaseEvent(QMouseEvent *event);
     bool eventFilter(QObject *, QEvent *);
     void hoverExitEvent(QEvent *event);

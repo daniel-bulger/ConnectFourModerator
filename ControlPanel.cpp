@@ -10,6 +10,15 @@ ControlPanel::ControlPanel(Moderator *theParent)
     fileMenu->addAction("Change AI dir",parent,SLOT(chooseDirectory()));
     fileMenu->addSeparator();
     fileMenu->addAction("Exit",this,SLOT(close()));
+    preferencesMenu = menuBar->addMenu("Preferences");
+    boardLockedPreference = preferencesMenu->addAction("Lock board in place");
+    boardLockedPreference->setCheckable(true);
+    boardLockedPreference->setChecked(false);
+    doubleClickToPlacePiecePreference = preferencesMenu->addAction("Double click to place piece");
+    doubleClickToPlacePiecePreference->setCheckable(true);
+    doubleClickToPlacePiecePreference->setChecked(false);
+
+
     helpMenu = menuBar->addMenu("Help");
 
     //initialize move history test area.
