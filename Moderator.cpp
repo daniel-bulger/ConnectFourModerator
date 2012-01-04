@@ -49,50 +49,37 @@ void Moderator::chooseDirectory(){
 void Moderator::directoryTextBoxEdited(){
 
 }
-
-bool Moderator::player1Move(int input){
+bool Moderator::playerMove(bool isPlayer1,int input){
     bool retVal = true;
-    QPair<int,QPair<int,int> > player1Output = currentGame.playMove(input);
-    if(player1Output.first==-2){
-        console("Tie game.");
-        gameBoard->gameResult(0);
-       retVal =  false;
+    QPair<int,QPair<int,int> > playerOutput = currentGame.playMove(input);
+    if(playerOutput.first==-1){
+        if(isPlayer1){
+            console("Player 1 placed a piece in an invalid location.");
+            player2Wins();
+        }
+        else{
+            console("Player 2 placed a piece in an invalid location.");
+            player1Wins();
+        }
+        return false;
     }
-    if(player1Output.first==-1){
-        console("Player 1 placed a piece in an invalid location.");
-        gameBoard->gameResult(2);
-       return false;
-    }
-    if(player1Output.first==0){
-        console("Player 1 wins!");
-        gameBoard->gameResult(1);
-       retVal = false;
-    }
-    gameBoard->place(player1Output.second.first,player1Output.second.second);
-    return retVal;
+    gameBoard->place(playerOutput.second.first,playerOutput.second.second);
 
-}
-bool Moderator::player2Move(int input){
-    bool retVal = true;
-    QPair<int,QPair<int,int> > player2Output = currentGame.playMove(input);
-    if(player2Output.first==-2){
-        console("Tie game.");
-        gameBoard->gameResult(0);
+    if(playerOutput.first==-2){
+        tieGame();
         retVal = false;
     }
-    if(player2Output.first==-1){
-        console("Player 2 placed a piece in an invalid location.");
-        gameBoard->gameResult(1);
-       return false;
-    }
-    if(player2Output.first==0){
-        console("Player 2 wins!");
-        gameBoard->gameResult(2);
-       retVal = false;
-    }
-    gameBoard->place(player2Output.second.first,player2Output.second.second);
-    return retVal;
 
+    if(playerOutput.first==0){
+        if(isPlayer1){
+            player1Wins();
+        }
+        else{
+            player2Wins();
+        }
+        retVal = false;
+    }
+    return retVal;
 }
 
 void Moderator::lookForMove(){
@@ -107,8 +94,7 @@ void Moderator::lookForMove(){
         moveChars.append("\n");
         qDebug() << moveChars;
 
-        if(player1Move(move)==false){
-            endGame();
+        if(playerMove(true,move)==false){
             return;
         }
         if(!player2->isManual){
@@ -134,8 +120,7 @@ void Moderator::lookForMove(){
         console(QString("Player 2's move: " + QString().setNum(move)));
         QString moveChars = QString().setNum(move);
         moveChars.append("\n");
-        if(player2Move(move)==false){
-            endGame();
+        if(playerMove(false, move)==false){
             return;
         }
         if(!player1->isManual){
@@ -197,26 +182,41 @@ void Moderator::player2DroppedPiece(int col){
     plyr2Move = col;
 }
 
-void Moderator::player1Wins(){
+void Moderator::player1Wins(bool dueToError){
     gameBoard->gameResult(1);
     console("PLAYER 1 WINS");
+    if(dueToError){
+        player1->write("0\n");
+        player2->write("0\n");
+    }
+    else{
+        player1->write("-1\n");
+        player2->write("-1\n");
+    }
     endGame();
 }
-void Moderator::player2Wins(){
+void Moderator::player2Wins(bool dueToError){
     gameBoard->gameResult(2);
     console("PLAYER 2 WINS");
+    if(dueToError){
+        player1->write("0\n");
+        player2->write("0\n");
+    }
+    else{
+        player1->write("-2\n");
+        player2->write("-2\n");
+    }
+    endGame();
+}
+void Moderator::tieGame(){
+    gameBoard->gameResult(0);
+    console("TIE GAME");
+    player1->write("-3\n");
+    player2->write("-3\n");
     endGame();
 }
 
 void Moderator::endGame(){
-    QString moveString = currentGame.getMoveString() + '\n';
-    QString logFilePath = *AIFolder;
-    logFilePath+= "/log.txt";
-    qDebug() <<logFilePath;
-    QFile file(logFilePath);
-    file.open(QIODevice::WriteOnly | QIODevice::Append);
-    file.write(QByteArray(moveString.toStdString().c_str()));
-    file.close();
     if(!player1->isManual){
         player1->disconnect();
         player1->close();
@@ -224,6 +224,17 @@ void Moderator::endGame(){
     if(!player2->isManual){
         player2->disconnect();
         player2->close();
+    }
+    QString moveString = currentGame.getMoveString();
+    if(moveString!=""){
+        moveString +="\n";
+        QString logFilePath = *AIFolder;
+        logFilePath+= "/log.txt";
+        qDebug() <<logFilePath;
+        QFile file(logFilePath);
+        file.open(QIODevice::WriteOnly | QIODevice::Append);
+        file.write(QByteArray(moveString.toStdString().c_str()));
+        file.close();
     }
     delete player1;
     player1 = NULL;

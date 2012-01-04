@@ -18,8 +18,10 @@ ControlPanel::ControlPanel(Moderator *theParent)
     doubleClickToPlacePiecePreference->setCheckable(true);
     doubleClickToPlacePiecePreference->setChecked(false);
 
-
     helpMenu = menuBar->addMenu("Help");
+    helpMenu->addAction("README",this,SLOT(displayReadme()));
+    helpMenu->addSeparator();
+    helpMenu->addAction("About this program...",this,SLOT(displayAbout()));
 
     //initialize move history test area.
     layout = new QVBoxLayout();
@@ -208,6 +210,33 @@ void ControlPanel::alert(QString message){
     QMessageBox myBox;
     myBox.setText(message);
     myBox.exec();
+}
+void ControlPanel::displayReadme(){
+    QString readmePath = ":/helpDocs/README.html";
+    QFile file(readmePath);
+    file.open(QIODevice::ReadOnly);
+    QString data = file.readAll();
+    file.close();
+    showHTML(data);
+}
+void ControlPanel::displayAbout(){
+    QString aboutPath = ":/helpDocs/about.html";
+    QFile file(aboutPath);
+    file.open(QIODevice::ReadOnly);
+    QString data = file.readAll();
+    file.close();
+    showHTML(data);
+}
+
+void ControlPanel::showHTML(QString data){
+    QWidget* newWindow = new QWidget();
+    QVBoxLayout* newLayout = new QVBoxLayout();
+    QTextBrowser* textB = new QTextBrowser();
+    textB->setReadOnly(true);
+    textB->setHtml(data);
+    newLayout->addWidget(textB);
+    newWindow->setLayout(newLayout);
+    newWindow->show();
 }
 
 void ControlPanel::loadFailed(QString player)

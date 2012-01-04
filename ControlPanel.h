@@ -82,6 +82,7 @@ public:
     void hidePauseButton();
     void player1Wins();
     void player2Wins();
+    void showHTML(QString data);
     static const int MOVE_TIME_LIMIT = 10;
 
  public slots:
@@ -89,6 +90,9 @@ public:
     void player2Debug();
     void populateComboBox(bool isPlayer1);
     void moveToStartingLocation();
+    void displayReadme();
+    void displayAbout();
+
 };
 
 #endif

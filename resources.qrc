@@ -5,4 +5,8 @@
         <file>red.png</file>
         <file>Highlight.png</file>
     </qresource>
+    <qresource prefix="/helpDocs">
+        <file>README.html</file>
+        <file>about.html</file>
+    </qresource>
 </RCC>

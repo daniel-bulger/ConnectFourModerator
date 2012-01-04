@@ -30,16 +30,16 @@ public:
     bool player1MadeAMove;
     bool player2MadeAMove;
     QSettings* settings;
-    bool player1Move(int);
-    bool player2Move(int);
+    bool playerMove(bool,int);
     void lookForMove();
     void alert(QString message);
     void loadFailed(QString player);
     void console(QString message);
     void endGame();
     void resetGoButton();
-    void player1Wins();
-    void player2Wins();
+    void player1Wins(bool dueToError = false);
+    void player2Wins(bool dueToError = false);
+    void tieGame();
 
     static const int MOVE_TIME_LIMIT = 10;
 
