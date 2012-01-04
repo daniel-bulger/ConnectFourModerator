@@ -8,13 +8,13 @@ Moderator::Moderator(QWidget *parent)
     //choose your directory
     settings = new QSettings("Minds and Machines", "Connect Four");
     AIFolder = new QString(settings->value("AI_DIRECTORY").toString());
+    //initialize board
+    gameBoard = new Board(this);
     //initialize control panel
-    gameBoard = NULL;
     controlPanel = new ControlPanel(this);
     qDebug("here");
 
-    //initialize board
-    gameBoard = new Board(this);
+
     connect(controlPanel->chooseDirectoryText,SIGNAL(textEdited()),this,SLOT(directoryTextBoxEdited()));
     connect(controlPanel->chooseDirectoryButton,SIGNAL(clicked()),this,SLOT(chooseDirectory()));
     connect(controlPanel->player1FileName, SIGNAL(currentIndexChanged(int)), this, SLOT(loadPlayer1Program(int)));
