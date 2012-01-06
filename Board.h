@@ -5,6 +5,7 @@
 #include "Piece.h"
 #include <QGraphicsObject>
 #include <QGraphicsView>
+class Piece;
 class Moderator;
 class Board : public QGraphicsView
 {
@@ -13,6 +14,7 @@ public:
     explicit Board(Moderator *parent = 0);
     void clearPieces();
     void place(int row, int col);
+    void resizeBoard(int width);
     void gameResult(int player);
     void mouseMoveEvent(QMouseEvent *event = 0);
     void mouseDoubleClickEvent(QMouseEvent *event);
@@ -24,18 +26,23 @@ public:
     void hoverEnterEvent(QEvent *event);
     void highlight(int col);
     void moveEvent(QMoveEvent * event);
-    int OFFSET_LEFT;
-    int COL_WIDTH;
-    int COL_HEIGHT;
-    int H_SPACING;
-    float V_SPACING;
-    int OFFSET_BOTTOM;
+    int oldWidth;
+    int originalWidth;
+    int originalHeight;
+    float OFFSET_LEFT();
+    float COL_WIDTH();
+    float COL_HEIGHT();
+    float H_SPACING();
+    float V_SPACING();
+    float OFFSET_BOTTOM();
     QPoint lastMousePos;
     bool isMoving;
     Moderator* parent;
 
     int currentPlayer;
     int playerGoesFirst;
+    QPixmap* boardImage;
+    QPixmap* highlightImage;
     QGraphicsScene* scene;
     QGraphicsPixmapItem* board;
     QGraphicsPixmapItem* highlightGraphic;

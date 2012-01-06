@@ -11,12 +11,41 @@ ControlPanel::ControlPanel(Moderator *theParent)
     fileMenu->addSeparator();
     fileMenu->addAction("Exit",this,SLOT(close()));
     preferencesMenu = menuBar->addMenu("Preferences");
+    boardSizeSubmenu = preferencesMenu->addMenu("Board size");
+    boardSmall = boardSizeSubmenu->addAction("Small");
+    boardSmall->setCheckable(true);
+    boardSmall->setChecked(parent->settings->value("boardsize").toInt()==1);
+    boardMedium = boardSizeSubmenu->addAction("Medium");
+    boardMedium->setCheckable(true);
+    boardMedium->setChecked(parent->settings->value("boardsize").toInt()==2);
+    boardLarge = boardSizeSubmenu->addAction("Large");
+    boardLarge->setCheckable(true);
+    boardLarge->setChecked(parent->settings->value("boardsize").toInt()==3);
+    boardAuto = boardSizeSubmenu->addAction("Auto");
+    boardAuto->setCheckable(true);
+    boardAuto->setChecked(parent->settings->value("boardsize").toInt()==0);
+
+    connect(boardAuto,SIGNAL(toggled(bool)),this,SLOT(boardAutoChanged(bool)));
+    connect(boardSmall,SIGNAL(toggled(bool)),this,SLOT(boardSmallChanged(bool)));
+    connect(boardMedium,SIGNAL(toggled(bool)),this,SLOT(boardMediumChanged(bool)));
+    connect(boardLarge,SIGNAL(toggled(bool)),this,SLOT(boardLargeChanged(bool)));
+
+
+    boardSizeChoices = new QActionGroup(this);
+    boardSizeChoices->addAction(boardSmall);
+    boardSizeChoices->addAction(boardMedium);
+    boardSizeChoices->addAction(boardLarge);
+    boardSizeChoices->addAction(boardAuto);
+
     boardLockedPreference = preferencesMenu->addAction("Lock board in place");
     boardLockedPreference->setCheckable(true);
-    boardLockedPreference->setChecked(false);
+    boardLockedPreference->setChecked(parent->settings->value("boardlock").toBool());
+    showOnlyGoodPrograms = preferencesMenu->addAction("Only display usable programs");
+    showOnlyGoodPrograms->setCheckable(true);
+    showOnlyGoodPrograms->setChecked(parent->settings->value("showgood").toBool());
     doubleClickToPlacePiecePreference = preferencesMenu->addAction("Double click to place piece");
     doubleClickToPlacePiecePreference->setCheckable(true);
-    doubleClickToPlacePiecePreference->setChecked(false);
+    doubleClickToPlacePiecePreference->setChecked(parent->settings->value("dblclicktoplace").toBool());
 
     helpMenu = menuBar->addMenu("Help");
     helpMenu->addAction("README",this,SLOT(displayReadme()));
@@ -39,8 +68,6 @@ ControlPanel::ControlPanel(Moderator *theParent)
     player1FileName->setMinimumWidth(100);
     player2FileName = new QComboBox();
     player2FileName->setMinimumWidth(100);
-    populateComboBox(true);
-    populateComboBox(false);
     //initializing players' time remaining bars and time per turn slider
     player1TimeRemainingBar = new QProgressBar;
     player1TimeRemainingBar->setRange(0, MOVE_TIME_LIMIT*1000);
@@ -113,6 +140,8 @@ ControlPanel::ControlPanel(Moderator *theParent)
     setLayout(layout);
     moveToStartingLocation();
     this->show();
+    populateComboBoxes();
+
 }
 
 ControlPanel::~ControlPanel()
@@ -121,7 +150,39 @@ ControlPanel::~ControlPanel()
 }
 // Application will exit when this pane is closed.  Any handling before exit should go here.
 void ControlPanel::closeEvent(QCloseEvent *event){
-  QApplication::quit();
+    parent->settings->setValue("showgood",showOnlyGoodPrograms->isChecked());
+    parent->settings->setValue("boardlock",boardLockedPreference->isChecked());
+    parent->settings->setValue("dblclicktoplace",doubleClickToPlacePiecePreference->isChecked());
+    if(boardSmall->isChecked()) parent->settings->setValue("boardsize",1);
+    if(boardMedium->isChecked()) parent->settings->setValue("boardsize",2);
+    if(boardLarge->isChecked()) parent->settings->setValue("boardsize",3);
+    if(boardAuto->isChecked()) parent->settings->setValue("boardsize",0);
+
+
+
+    QApplication::quit();
+}
+void ControlPanel::populateComboBoxes(){
+    player1FileName->clear();
+    player2FileName->clear();
+
+    player1FileName->insertItem(player1FileName->count(),"Choose...","NONE_SELECTED");
+    player2FileName->insertItem(player2FileName->count(),"Choose...","NONE_SELECTED");
+    player1FileName->insertItem(player1FileName->count(),"MANUAL","MANUAL_MODE");
+    player2FileName->insertItem(player2FileName->count(),"MANUAL","MANUAL_MODE");
+    player1FileName->insertItem(player1FileName->count(),"COMMAND","COMMAND_MODE");
+    player2FileName->insertItem(player2FileName->count(),"COMMAND","COMMAND_MODE");
+    QDirIterator it(*(parent->AIFolder), QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+        QString next(it.next());
+        QStringList strings = next.split('/');
+        if(strings.last()!="."&&strings.last()!=".."){
+            if((!this->showOnlyGoodPrograms->isChecked())||(parent->testProgram(next))){
+            player1FileName->insertItem(player1FileName->count(), strings.last(),QVariant(QString(next)));
+            player2FileName->insertItem(player2FileName->count(), strings.last(),QVariant(QString(next)));
+        }
+        }
+    }
 }
 
 void ControlPanel::populateComboBox(bool isPlayer1){
@@ -140,8 +201,10 @@ void ControlPanel::populateComboBox(bool isPlayer1){
     while (it.hasNext()) {
         QString next(it.next());
         QStringList strings = next.split('/');
-        if(strings.last()!="."&&strings.last()!="..")
-        playerFileName->insertItem(playerFileName->count(), strings.last(),QVariant(QString(next)));
+        if(strings.last()!="."&&strings.last()!=".."){
+            if((!this->showOnlyGoodPrograms->isChecked())||(parent->testProgram(next)))
+            playerFileName->insertItem(playerFileName->count(), strings.last(),QVariant(QString(next)));
+        }
     }
 }
 
@@ -211,6 +274,44 @@ void ControlPanel::alert(QString message){
     myBox.setText(message);
     myBox.exec();
 }
+void ControlPanel::boardAutoChanged(bool isChecked,bool recur){
+
+    if(isChecked){
+        int width = QApplication::desktop()->width();
+        int height = QApplication::desktop()->height();
+        if((width * 1574 / 1260) > (height)){
+            parent->gameBoard->resizeBoard(width*2/3);
+        }
+        else{
+            parent->gameBoard->resizeBoard(height*2/3*1574/1260);
+        }
+    }
+    if(recur) boardAutoChanged(isChecked,false);
+}
+void ControlPanel::boardSmallChanged(bool isChecked,bool recur){
+
+    if(isChecked){
+        parent->gameBoard->resizeBoard(500);
+    }
+    if(recur) boardSmallChanged(isChecked,false);
+}
+void ControlPanel::boardMediumChanged(bool isChecked,bool recur){
+
+    if(isChecked){
+        parent->gameBoard->resizeBoard(1000);
+    }
+    if(recur) boardMediumChanged(isChecked,false);
+
+}
+void ControlPanel::boardLargeChanged(bool isChecked,bool recur){
+
+    if(isChecked){
+        parent->gameBoard->resizeBoard(1500);
+    }
+    if(recur) boardLargeChanged(isChecked,false);
+
+}
+
 void ControlPanel::displayReadme(){
     QString readmePath = ":/helpDocs/README.html";
     QFile file(readmePath);

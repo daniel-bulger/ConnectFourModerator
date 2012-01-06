@@ -40,6 +40,7 @@ public:
     void player1Wins(bool dueToError = false);
     void player2Wins(bool dueToError = false);
     void tieGame();
+    bool testProgram(QString progName, QStringList args = QStringList());
 
     static const int MOVE_TIME_LIMIT = 10;
 

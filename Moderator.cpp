@@ -38,12 +38,13 @@ Moderator::~Moderator()
 }
 
 void Moderator::chooseDirectory(){
-    QString folder = QFileDialog::getExistingDirectory(0,"Choose the folder where your AIs are located");
+    QString folder = QFileDialog::getExistingDirectory(0,"Choose the folder where your AIs are located",settings->value("AI_DIRECTORY").toString());
+    if(folder!=""){
     controlPanel->chooseDirectoryText->setText(folder);
     AIFolder = new QString(folder);
     settings->setValue("AI_DIRECTORY",folder);
-    controlPanel->populateComboBox(true);
-    controlPanel->populateComboBox(false);
+    controlPanel->populateComboBoxes();
+    }
 }
 
 void Moderator::directoryTextBoxEdited(){
@@ -54,10 +55,12 @@ bool Moderator::playerMove(bool isPlayer1,int input){
     QPair<int,QPair<int,int> > playerOutput = currentGame.playMove(input);
     if(playerOutput.first==-1){
         if(isPlayer1){
+            if(player1->isManual) return false;
             console("Player 1 placed a piece in an invalid location.");
             player2Wins();
         }
         else{
+            if(player2->isManual) return false;
             console("Player 2 placed a piece in an invalid location.");
             player1Wins();
         }
@@ -89,20 +92,21 @@ void Moderator::lookForMove(){
         player2HasMoved();
     if(gamestate==PLAYER_1_TO_MOVE && player1MadeAMove){
         int move = plyr1Move;
-        console(QString("Player 1's move: " + QString().setNum(move)));
+
         QString moveChars = QString().setNum(move);
         moveChars.append("\n");
         qDebug() << moveChars;
+        player1MadeAMove = false;
 
         if(playerMove(true,move)==false){
             return;
         }
+        console(QString("Player 1's move: " + QString().setNum(move)));
         if(!player2->isManual){
             player2->write(moveChars.toStdString().c_str());
             player2->waitForBytesWritten();
             qDebug() << "DOME" ;
         }
-        player1MadeAMove = false;
         gamestate = PLAYER_2_TO_MOVE;
         if(!player2->isManual){
             gameBoard->highlightGraphic->hide();
@@ -117,18 +121,20 @@ void Moderator::lookForMove(){
     else{
     if(gamestate==PLAYER_2_TO_MOVE && player2MadeAMove){
         int move = plyr2Move;
-        console(QString("Player 2's move: " + QString().setNum(move)));
         QString moveChars = QString().setNum(move);
         moveChars.append("\n");
+        player2MadeAMove = false;
+
         if(playerMove(false, move)==false){
             return;
         }
+        console(QString("Player 2's move: " + QString().setNum(move)));
+
         if(!player1->isManual){
             player1->write(moveChars.toStdString().c_str());
             player1->waitForBytesWritten();
         }
 
-        player2MadeAMove = false;
         gamestate = PLAYER_1_TO_MOVE;
         if(!player1->isManual){
             gameBoard->highlightGraphic->hide();
@@ -362,6 +368,25 @@ bool Moderator::loadPlayer1Program(int boxIndex){
 }
 bool Moderator::loadPlayer2Program(int boxIndex){
     return loadPlayerProgram(false,boxIndex);
+}
+bool Moderator::testProgram(QString progName, QStringList args){
+    try{
+        Player player(progName,args);
+    }
+    catch(bool){
+        if(progName.endsWith(".exe")){
+            try{
+                Player player("wine",QStringList(progName));
+            }
+            catch(bool){
+            return false;
+            }
+        }
+        else{
+            return false;
+        }
+    }
+    return true;
 }
 
 bool Moderator::loadPlayerProgram(bool isPlayer1, int boxIndex){

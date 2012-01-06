@@ -58,8 +58,15 @@ public:
     QMenu* fileMenu;
     QMenu* helpMenu;
     QMenu* preferencesMenu;
+    QMenu* boardSizeSubmenu;
+    QActionGroup* boardSizeChoices;
     QAction* boardLockedPreference;
     QAction* doubleClickToPlacePiecePreference;
+    QAction* showOnlyGoodPrograms;
+    QAction* boardSmall;
+    QAction* boardMedium;
+    QAction* boardLarge;
+    QAction* boardAuto;
     QSettings* settings;
     QString player1ProgramName;
     QString player2ProgramName;
@@ -88,10 +95,15 @@ public:
  public slots:
     void player1Debug();
     void player2Debug();
+    void populateComboBoxes();
     void populateComboBox(bool isPlayer1);
     void moveToStartingLocation();
     void displayReadme();
     void displayAbout();
+    void boardAutoChanged(bool isChecked,bool recur = true);
+    void boardSmallChanged(bool isChecked, bool recur = true);
+    void boardMediumChanged(bool isChecked, bool recur = true);
+    void boardLargeChanged(bool isChecked,bool recur = true);
 
 };
 
