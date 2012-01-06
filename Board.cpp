@@ -5,6 +5,7 @@
 Board::Board(Moderator *parent) :parent(parent),
     QGraphicsView()
 {
+    isResizing = false;
     isMoving = false;
     // Create the view and the scene!
     scene = new QGraphicsScene();
@@ -161,8 +162,8 @@ void Board::mouseMoveEvent(QMouseEvent *event)
         this->move(this->pos() + (event->globalPos() - lastMousePos));
         lastMousePos = event->globalPos();
     }
-        if(event->buttons().testFlag(Qt::LeftButton) && ((event->y()>this->height()*.95))&&(event->x()>this->width()*.95)){
-            resizeBoard(event->x());
+        if(isResizing){
+            resizeBoard(widthAtPress-mapFromGlobal(lastMousePos).x()+event->x());
         }
     }
     int x;
@@ -227,11 +228,19 @@ void Board::mousePressEvent(QMouseEvent *event){
         col = 7;
     if(!parent->controlPanel->doubleClickToPlacePiecePreference->isChecked())
         placePieceIfManual(col);
-    if((event->button() == Qt::LeftButton)&&(!parent->controlPanel->boardLockedPreference->isChecked()))
-    {
-        isMoving = true;
+    if((event->button()==Qt::LeftButton)&&(((event->y()>this->height()*.95))&&(event->x()>this->width()*.95)))  {
         lastMousePos = event->globalPos();
+        widthAtPress = this->width();
+        isResizing = true;
     }
+    else if((event->button() == Qt::LeftButton)&&(!parent->controlPanel->boardLockedPreference->isChecked()))
+    {
+        lastMousePos = event->globalPos();
+
+        isMoving = true;
+
+    }
+
 }
 void Board::placePieceIfManual(int col){
     if(parent->gamestate==parent->PLAYER_1_TO_MOVE && parent->player1->isManual){
@@ -245,8 +254,10 @@ void Board::placePieceIfManual(int col){
 }
 
 void Board::mouseReleaseEvent(QMouseEvent* event){
-    if(event->button() == Qt::LeftButton)
+    if(event->button() == Qt::LeftButton){
         isMoving = false;
+        isResizing = false;
+    }
 }
 
 void Board::highlight(int col)

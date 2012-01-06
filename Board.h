@@ -28,6 +28,7 @@ public:
     void moveEvent(QMoveEvent * event);
     int oldWidth;
     int originalWidth;
+    int widthAtPress;
     int originalHeight;
     float OFFSET_LEFT();
     float COL_WIDTH();
@@ -37,6 +38,7 @@ public:
     float OFFSET_BOTTOM();
     QPoint lastMousePos;
     bool isMoving;
+    bool isResizing;
     Moderator* parent;
 
     int currentPlayer;
