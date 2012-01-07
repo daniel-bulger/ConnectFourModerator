@@ -46,7 +46,8 @@ bool Player::getQuestionMark(){
     waitForReadyRead(100);
     char input;
     getChar(&input);
-    if(input == '?'){
+    qDebug() << QString(input);
+    if(QString(input) == "?"){
         return true;
     }
     else{

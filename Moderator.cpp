@@ -372,23 +372,34 @@ bool Moderator::loadPlayer2Program(int boxIndex){
     return loadPlayerProgram(false,boxIndex);
 }
 bool Moderator::testProgram(QString progName, QStringList args){
+    Player* player = NULL;
     try{
-        Player player(progName,args);
+        player = new Player(progName,args);
     }
     catch(bool){
         if(progName.endsWith(".exe")){
             try{
-                Player player("wine",QStringList(progName));
+                player = new Player("wine",QStringList(progName));
             }
             catch(bool){
-            return false;
+                delete player;
+                return false;
             }
         }
         else{
+            delete player;
             return false;
         }
     }
-    return true;
+    player->write("2\n");
+    if(player->getQuestionMark()){
+        delete player;
+        return true;
+    }
+    else{
+        delete player;
+        return false;
+    }
 }
 
 bool Moderator::loadPlayerProgram(bool isPlayer1, int boxIndex){
