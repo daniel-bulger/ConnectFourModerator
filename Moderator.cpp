@@ -148,35 +148,37 @@ void Moderator::lookForMove(){
     }
     }
 }
-
-void Moderator::player1HasMoved(){
+void Moderator::playerHasMoved(bool isPlayer1){
+    Player* player;
+    if(isPlayer1) player = player1;
+    else player = player2;
     if(gamestate!=GAME_STOPPED){
-        qDebug() << "MEH";
-        QString input = QString(player1->readAllStandardOutput());
+        QString input = QString(player->readAllStandardOutput());
         if(input=="")
             return;
-        player1MadeAMove = true;
-
-        if(QString(input).toInt()<=0||QString(input).toInt()>7)
-            player2Wins();
+        if(isPlayer1)
+            player1MadeAMove = true;
+        else
+            player1MadeAMove = true;
+        if(QString(input).toInt()<=0||QString(input).toInt()>7){
+            if(isPlayer1)
+                player2Wins();
+            else
+                player1Wins();
+        }
+        if(isPlayer1)
         plyr1Move = QString(input).toInt();
-    }
-}
-void Moderator::player2HasMoved(){
-    if(gamestate!=GAME_STOPPED){
-        qDebug() << "MAAAAAAAAAAH";
-
-        QString input = QString(player2->readAllStandardOutput());
-        if(input=="")
-            return;
-        player2MadeAMove = true;
-
-        if(QString(input).toInt()<=0||QString(input).toInt()>7)
-            player1Wins();
+        else
         plyr2Move = QString(input).toInt();
     }
 }
 
+void Moderator::player1HasMoved(){
+    playerHasMoved(true);
+}
+void Moderator::player2HasMoved(){
+    playerHasMoved(false);
+}
 void Moderator::player1DroppedPiece(int col){
     if(gamestate!=GAME_STOPPED){
         player1MadeAMove = true;

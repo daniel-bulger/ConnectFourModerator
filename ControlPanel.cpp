@@ -162,6 +162,13 @@ void ControlPanel::closeEvent(QCloseEvent *event){
 
     QApplication::quit();
 }
+void ControlPanel::showEvent(QShowEvent*){
+    qDebug("SHOWING CONTROLPANEL");
+    if((parent->gameBoard)!=NULL){
+        parent->gameBoard->activateWindow();
+    }
+}
+
 void ControlPanel::populateComboBoxes(){
     player1FileName->clear();
     player2FileName->clear();

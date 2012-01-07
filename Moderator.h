@@ -49,6 +49,7 @@ public:
     void directoryTextBoxEdited();
     void decrementTimePerTurnTimer();
     void updateTimer();
+    void playerHasMoved(bool isPlayer1);
     void player1HasMoved();
     void player2HasMoved();
     void player1DroppedPiece(int col);

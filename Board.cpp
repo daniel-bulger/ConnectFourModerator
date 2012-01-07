@@ -225,21 +225,23 @@ void Board::mouseDoubleClickEvent(QMouseEvent *event){
 
 void Board::mousePressEvent(QMouseEvent *event){
     event->accept();
-    int col = ceil((round(float(event->x())/float(this->width())*(float)this->originalWidth)+OFFSET_LEFT()-H_SPACING())/(COL_WIDTH()+H_SPACING()));
-    if(col>7)
-        col = 7;
-    if(!parent->controlPanel->doubleClickToPlacePiecePreference->isChecked())
-        placePieceIfManual(col);
     if((event->button()==Qt::LeftButton)&&(((event->y()>this->height()*.95))&&(event->x()>this->width()*.95)))  {
         lastMousePos = event->globalPos();
         widthAtPress = this->width();
         isResizing = true;
     }
-    else if((event->button() == Qt::LeftButton)&&(!parent->controlPanel->boardLockedPreference->isChecked()))
-    {
-        lastMousePos = event->globalPos();
-        isMoving = true;
+    else {
+        if((event->button() == Qt::LeftButton)&&(!parent->controlPanel->boardLockedPreference->isChecked()))
+        {
+            lastMousePos = event->globalPos();
+            isMoving = true;
 
+        }
+        int col = ceil((round(float(event->x())/float(this->width())*(float)this->originalWidth)+OFFSET_LEFT()-H_SPACING())/(COL_WIDTH()+H_SPACING()));
+        if(col>7)
+            col = 7;
+        if(!parent->controlPanel->doubleClickToPlacePiecePreference->isChecked())
+            placePieceIfManual(col);
     }
 
 }
