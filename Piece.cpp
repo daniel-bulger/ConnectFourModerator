@@ -40,4 +40,9 @@ QRectF Piece::boundingRect() const
 }
 void Piece::removeFromScene(){
     parent->scene->removeItem(this);
+    int i;
+    for(i = 0; i<parent->pieces.size(); i++){
+        if((parent->pieces[i])==(this)) break;
+    }
+    parent->pieces.remove(i);
 }

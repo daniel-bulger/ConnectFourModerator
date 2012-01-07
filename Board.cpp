@@ -98,8 +98,10 @@ void Board::place(int col, int row)
 void Board::resizeBoard(int width){
     oldWidth = this->width();
     qDebug() << oldWidth;
-    this->resize(width,width*1260/1574);
     this->scale(float(width)/float(oldWidth),float(width)/float(oldWidth));
+    this->scene->setSceneRect(0,0,this->width(),height());
+    this->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    this->resize(width,width*1260/1574);
 
     /*float ratio = float(width)/float(oldWidth);
     qDebug() << ratio;
@@ -236,7 +238,6 @@ void Board::mousePressEvent(QMouseEvent *event){
     else if((event->button() == Qt::LeftButton)&&(!parent->controlPanel->boardLockedPreference->isChecked()))
     {
         lastMousePos = event->globalPos();
-
         isMoving = true;
 
     }
