@@ -159,7 +159,7 @@ void Moderator::playerHasMoved(bool isPlayer1){
         if(isPlayer1)
             player1MadeAMove = true;
         else
-            player1MadeAMove = true;
+            player2MadeAMove = true;
         if(QString(input).toInt()<=0||QString(input).toInt()>7){
             if(isPlayer1)
                 player2Wins();
