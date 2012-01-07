@@ -11,6 +11,11 @@ ControlPanel::ControlPanel(Moderator *theParent)
     fileMenu->addSeparator();
     fileMenu->addAction("Exit",this,SLOT(close()));
     preferencesMenu = menuBar->addMenu("Preferences");
+    boardBackgroundPreference = preferencesMenu->addAction("Board background");
+    boardBackgroundPreference->setCheckable(true);
+    connect(boardBackgroundPreference,SIGNAL(toggled(bool)),this,SLOT(boardBackChanged(bool)));
+    boardBackgroundPreference->setChecked(parent->settings->value("boardback").toBool());
+
     boardSizeSubmenu = preferencesMenu->addMenu("Board size");
     boardSmall = boardSizeSubmenu->addAction("Small");
     boardSmall->setCheckable(true);
@@ -40,12 +45,13 @@ ControlPanel::ControlPanel(Moderator *theParent)
     boardLockedPreference = preferencesMenu->addAction("Lock board in place");
     boardLockedPreference->setCheckable(true);
     boardLockedPreference->setChecked(parent->settings->value("boardlock").toBool());
-    showOnlyGoodPrograms = preferencesMenu->addAction("Only display usable programs");
-    showOnlyGoodPrograms->setCheckable(true);
-    showOnlyGoodPrograms->setChecked(parent->settings->value("showgood").toBool());
     doubleClickToPlacePiecePreference = preferencesMenu->addAction("Double click to place piece");
     doubleClickToPlacePiecePreference->setCheckable(true);
     doubleClickToPlacePiecePreference->setChecked(parent->settings->value("dblclicktoplace").toBool());
+    preferencesMenu->addSeparator();
+    showOnlyGoodPrograms = preferencesMenu->addAction("Only display usable programs");
+    showOnlyGoodPrograms->setCheckable(true);
+    showOnlyGoodPrograms->setChecked(parent->settings->value("showgood").toBool());
 
     helpMenu = menuBar->addMenu("Help");
     helpMenu->addAction("README",this,SLOT(displayReadme()));
@@ -152,6 +158,7 @@ ControlPanel::~ControlPanel()
 void ControlPanel::closeEvent(QCloseEvent *event){
     parent->settings->setValue("showgood",showOnlyGoodPrograms->isChecked());
     parent->settings->setValue("boardlock",boardLockedPreference->isChecked());
+    parent->settings->setValue("boardback",boardBackgroundPreference->isChecked());
     parent->settings->setValue("dblclicktoplace",doubleClickToPlacePiecePreference->isChecked());
     if(boardSmall->isChecked()) parent->settings->setValue("boardsize",1);
     if(boardMedium->isChecked()) parent->settings->setValue("boardsize",2);
@@ -281,6 +288,16 @@ void ControlPanel::alert(QString message){
     myBox.setText(message);
     myBox.exec();
 }
+void ControlPanel::boardBackChanged(bool isChecked){
+    qDebug() << "back changed";
+    if(isChecked){
+        parent->gameBoard->setBackgroundBrush(Qt::SolidPattern);
+    }
+    else{
+        parent->gameBoard->setBackgroundBrush(Qt::NoBrush);
+    }
+}
+
 void ControlPanel::boardAutoChanged(bool isChecked,bool recur){
 
     if(isChecked){

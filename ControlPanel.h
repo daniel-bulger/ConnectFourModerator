@@ -60,6 +60,7 @@ public:
     QMenu* preferencesMenu;
     QMenu* boardSizeSubmenu;
     QActionGroup* boardSizeChoices;
+    QAction* boardBackgroundPreference;
     QAction* boardLockedPreference;
     QAction* doubleClickToPlacePiecePreference;
     QAction* showOnlyGoodPrograms;
@@ -100,6 +101,7 @@ public:
     void moveToStartingLocation();
     void displayReadme();
     void displayAbout();
+    void boardBackChanged(bool isChecked);
     void boardAutoChanged(bool isChecked,bool recur = true);
     void boardSmallChanged(bool isChecked, bool recur = true);
     void boardMediumChanged(bool isChecked, bool recur = true);
