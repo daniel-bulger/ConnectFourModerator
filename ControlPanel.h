@@ -16,6 +16,7 @@ public:
     ~ControlPanel();
     void closeEvent(QCloseEvent *event);
     void showEvent(QShowEvent* event);
+    void hideEvent(QHideEvent *);
     enum gamestates{GAME_STOPPED,PLAYER_1_TO_MOVE,PLAYER_2_TO_MOVE,PLAYER_1_QUESTION_MARK,PLAYER_2_QUESTION_MARK};
     int gamestate;
     // Child windows

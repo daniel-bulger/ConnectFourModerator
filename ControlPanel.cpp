@@ -172,7 +172,13 @@ void ControlPanel::closeEvent(QCloseEvent *event){
 void ControlPanel::showEvent(QShowEvent*){
     qDebug("SHOWING CONTROLPANEL");
     if((parent->gameBoard)!=NULL){
-        parent->gameBoard->activateWindow();
+        parent->gameBoard->setWindowState(Qt::WindowActive);
+    }
+}
+void ControlPanel::hideEvent(QHideEvent *){
+    if((parent->gameBoard)!=NULL){
+        qDebug("HIDING CONTROLPANEL");
+        parent->gameBoard->setWindowState(Qt::WindowMinimized);
     }
 }
 

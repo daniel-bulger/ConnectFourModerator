@@ -31,6 +31,7 @@ public:
     bool player2MadeAMove;
     QSettings* settings;
     bool playerMove(bool,int);
+    bool eventFilter(QObject *, QEvent *);
     void lookForMove();
     void alert(QString message);
     void loadFailed(QString player);

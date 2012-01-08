@@ -6,5 +6,6 @@ int main(int argc, char *argv[])
 {
     QApplication connectFour(argc, argv);
     Moderator moderator;
+    connectFour.installEventFilter(&moderator);
     return connectFour.exec();
 }

@@ -364,6 +364,22 @@ void Moderator::pauseButtonPressed(){
         controlPanel->resetPauseButton();
     }
 }
+bool Moderator::eventFilter(QObject *obj, QEvent *event){
+       if (event->type() == QEvent::ApplicationDeactivate) {
+           qDebug() << "deactivate";
+
+          // The application deactivation can be handled here
+          return true; // The event is handled
+       }
+       if (event->type() == QEvent::ApplicationActivate) {
+           qDebug() << "activate";
+       gameBoard->activateWindow();
+       controlPanel->activateWindow();
+          // The application activation can be handled here
+          return true;
+       }
+       return QObject::eventFilter(obj, event); // Unhandled events are passed to the base class
+}
 
 bool Moderator::loadPlayer1Program(int boxIndex){
     return loadPlayerProgram(true,boxIndex);
