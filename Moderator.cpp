@@ -153,7 +153,7 @@ void Moderator::playerHasMoved(bool isPlayer1){
     if(isPlayer1) player = player1;
     else player = player2;
     if(gamestate!=GAME_STOPPED){
-        QString input = QString(player->readAllStandardOutput());
+        QString input = QString(player->readNewInput());
         if(input=="")
             return;
         if(isPlayer1)
@@ -390,12 +390,13 @@ bool Moderator::loadPlayer2Program(int boxIndex){
 bool Moderator::testProgram(QString progName, QStringList args){
     Player* player = NULL;
     try{
-        player = new Player(progName,args);
+        player = new Player(true,progName,args);
     }
     catch(bool){
+        delete player;
         if(progName.endsWith(".exe")){
             try{
-                player = new Player("wine",QStringList(progName));
+                player = new Player(true,"wine",QStringList(progName));
             }
             catch(bool){
                 delete player;
@@ -458,7 +459,7 @@ bool Moderator::loadPlayerProgram(bool isPlayer1, int boxIndex){
         }
     }
     try{
-    player = new Player(progName,args);
+    player = new Player(isPlayer1,progName,args);
     if(isPlayer1){
         player1 = player;
     }
@@ -469,7 +470,7 @@ bool Moderator::loadPlayerProgram(bool isPlayer1, int boxIndex){
     catch(bool){
         if(progName.endsWith(".exe")){
             try{
-                player = new Player("wine",QStringList(progName));
+                player = new Player(isPlayer1,"wine",QStringList(progName));
                 if(isPlayer1){
                     player1 = player;
                 }
