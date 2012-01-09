@@ -5,6 +5,8 @@ Moderator::Moderator(QWidget *parent)
     : QMainWindow(parent)
 {
     this->setVisible(false);
+    gamestate = GAME_STOPPED;
+
     //choose your directory
     settings = new QSettings("Minds and Machines", "Connect Four");
     AIFolder = new QString(settings->value("AI_DIRECTORY").toString());
@@ -23,7 +25,6 @@ Moderator::Moderator(QWidget *parent)
     connect(controlPanel->timer, SIGNAL(timeout()), this, SLOT(updateTimer()));
 
     //initializing game start/stop button
-    gamestate = GAME_STOPPED;
     connect(controlPanel->go, SIGNAL(clicked()), this, SLOT(goButtonPressed()));
     connect(controlPanel->pause, SIGNAL(clicked()), this, SLOT(pauseButtonPressed()));
 
@@ -186,8 +187,10 @@ void Moderator::player1DroppedPiece(int col){
     }
 }
 void Moderator::player2DroppedPiece(int col){
-    player2MadeAMove = true;
-    plyr2Move = col;
+    if(gamestate!=GAME_STOPPED){
+        player2MadeAMove = true;
+        plyr2Move = col;
+    }
 }
 
 void Moderator::player1Wins(bool dueToError){
@@ -322,14 +325,12 @@ void Moderator::goButtonPressed(){
             player1MadeAMove = false;
             player2MadeAMove = false;
             if(!player1->isManual){
-                connect(player1,SIGNAL(readyReadStandardOutput()),this,SLOT(player1HasMoved()));
                 connect(player1,SIGNAL(readyReadStandardError()),this,SLOT(player1Debug()));
             }
             else{
                 connect(gameBoard,SIGNAL(pieceDroppedByPlayer(int)),this,SLOT(playerDroppedPiece(int)));
             }
             if(!player2->isManual){
-                connect(player2,SIGNAL(readyReadStandardOutput()),this,SLOT(player2HasMoved()));
                 connect(player2,SIGNAL(readyReadStandardError()),this,SLOT(player2Debug()));
             }
             else{

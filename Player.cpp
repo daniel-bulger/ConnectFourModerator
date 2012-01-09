@@ -67,6 +67,7 @@ bool Player::getQuestionMark(){
     }
 }
 QString Player::readNewInput(){
+    if(isManual) return "";
     if(!file->open(QIODevice::ReadOnly)){
         qDebug("Failed to open file");
     }
