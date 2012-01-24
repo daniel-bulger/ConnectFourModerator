@@ -45,6 +45,9 @@ ControlPanel::ControlPanel(Moderator *theParent)
     boardLockedPreference = preferencesMenu->addAction("Lock board in place");
     boardLockedPreference->setCheckable(true);
     boardLockedPreference->setChecked(parent->settings->value("boardlock").toBool());
+    timeLimitPreference = preferencesMenu->addAction("Enforce time limit");
+    timeLimitPreference->setCheckable(true);
+    timeLimitPreference->setChecked(parent->settings->value("timelimit").toBool());
     doubleClickToPlacePiecePreference = preferencesMenu->addAction("Double click to place piece");
     doubleClickToPlacePiecePreference->setCheckable(true);
     doubleClickToPlacePiecePreference->setChecked(parent->settings->value("dblclicktoplace").toBool());
@@ -160,6 +163,7 @@ void ControlPanel::closeEvent(QCloseEvent *event){
     parent->settings->setValue("boardlock",boardLockedPreference->isChecked());
     parent->settings->setValue("boardback",boardBackgroundPreference->isChecked());
     parent->settings->setValue("dblclicktoplace",doubleClickToPlacePiecePreference->isChecked());
+    parent->settings->setValue("timelimit",timeLimitPreference->isChecked());
     if(boardSmall->isChecked()) parent->settings->setValue("boardsize",1);
     if(boardMedium->isChecked()) parent->settings->setValue("boardsize",2);
     if(boardLarge->isChecked()) parent->settings->setValue("boardsize",3);

@@ -532,10 +532,10 @@ void Moderator::updateTimer()
 {
     if (gamestate==PLAYER_1_TO_MOVE) {
         controlPanel->player1TimeRemainingBar->setValue(controlPanel->player1TimeRemainingBar->value()-10);
-        if(controlPanel->player1TimeRemainingBar->value()<=0) player2Wins();
+        if((controlPanel->player1TimeRemainingBar->value()<=0) && (controlPanel->timeLimitPreference->isChecked())) player2Wins();
     } else if (gamestate==PLAYER_2_TO_MOVE) {
         controlPanel->player2TimeRemainingBar->setValue(controlPanel->player2TimeRemainingBar->value()-10);
-        if(controlPanel->player2TimeRemainingBar->value()<=0) player1Wins();
+        if((controlPanel->player2TimeRemainingBar->value()<=0) && (controlPanel->timeLimitPreference->isChecked())) player1Wins();
 
     } else {
         return;

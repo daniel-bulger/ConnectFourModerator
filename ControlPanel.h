@@ -63,6 +63,7 @@ public:
     QActionGroup* boardSizeChoices;
     QAction* boardBackgroundPreference;
     QAction* boardLockedPreference;
+    QAction* timeLimitPreference;
     QAction* doubleClickToPlacePiecePreference;
     QAction* showOnlyGoodPrograms;
     QAction* boardSmall;
