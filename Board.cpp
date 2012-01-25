@@ -5,6 +5,7 @@
 Board::Board(Moderator *parent) :parent(parent),
     QGraphicsView()
 {
+    this->setRenderHint(QPainter::SmoothPixmapTransform);
     isResizing = false;
     isMoving = false;
     // Create the view and the scene!
@@ -267,9 +268,7 @@ void Board::mouseReleaseEvent(QMouseEvent* event){
 
 void Board::highlight(int col)
 {
-    qDebug() << col;
     int x = (H_SPACING()+OFFSET_LEFT()+(COL_WIDTH()+H_SPACING())*(col-1));
-    qDebug() << x;
     this->highlightGraphic->setPos(x,0);
     highlightGraphic->show();
 }
