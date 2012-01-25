@@ -382,11 +382,11 @@ bool Moderator::eventFilter(QObject *obj, QEvent *event){
        return QObject::eventFilter(obj, event); // Unhandled events are passed to the base class
 }
 
-bool Moderator::loadPlayer1Program(int boxIndex){
-    return loadPlayerProgram(true,boxIndex);
+bool Moderator::loadPlayer1Program(int boxIndex, QString commandGiven){
+    return loadPlayerProgram(true,boxIndex, commandGiven);
 }
-bool Moderator::loadPlayer2Program(int boxIndex){
-    return loadPlayerProgram(false,boxIndex);
+bool Moderator::loadPlayer2Program(int boxIndex, QString commandGiven){
+    return loadPlayerProgram(false,boxIndex, commandGiven);
 }
 bool Moderator::testProgram(QString progName, QStringList args){
     Player* player = NULL;
@@ -420,7 +420,7 @@ bool Moderator::testProgram(QString progName, QStringList args){
     }
 }
 
-bool Moderator::loadPlayerProgram(bool isPlayer1, int boxIndex){
+bool Moderator::loadPlayerProgram(bool isPlayer1, int boxIndex, QString commandGiven){
     QComboBox* playerFileName;
     QString progName;
     QStringList args;
@@ -448,12 +448,14 @@ bool Moderator::loadPlayerProgram(bool isPlayer1, int boxIndex){
 
     QString friendlyName = playerFileName->itemText(boxIndex);
     progName = playerFileName->itemData(playerFileName->currentIndex()).toString();
+    if(friendlyName!="COMMAND")playerFileName->setItemData(playerFileName->findText("COMMAND"),QVariant("COMMAND_MODE"));
     if(progName=="NONE_SELECTED") return false;
     if(progName=="") return false;
     if(progName=="COMMAND_MODE"){
         bool ok = false;
         QString text = QInputDialog::getText(this, tr("Advanced program entry"),tr("Enter a command that will run your AI."), QLineEdit::Normal,"", &ok);
         if(ok&&text!=""){
+            playerFileName->setItemData(playerFileName->currentIndex(),QVariant(text));
             progName = text.split(' ')[0];
             args = text.split(' ');
             args.pop_front();

@@ -50,15 +50,16 @@ ControlPanel::ControlPanel(Moderator *theParent)
     boardLockedPreference->setCheckable(true);
     boardLockedPreference->setChecked(parent->settings->value("boardlock").toBool());
 
-    timeLimitPreference = preferencesMenu->addAction("Enforce time limit");
-    timeLimitPreference->setCheckable(true);
-    timeLimitPreference->setChecked(parent->settings->value("timelimit").toBool());
-
     doubleClickToPlacePiecePreference = preferencesMenu->addAction("Double click to place piece");
     doubleClickToPlacePiecePreference->setCheckable(true);
     doubleClickToPlacePiecePreference->setChecked(parent->settings->value("dblclicktoplace").toBool());
 
     preferencesMenu->addSeparator();
+
+    timeLimitPreference = preferencesMenu->addAction("Enforce time limit");
+    timeLimitPreference->setCheckable(true);
+    timeLimitPreference->setChecked(parent->settings->value("timelimit").toBool());
+
     showOnlyGoodPrograms = preferencesMenu->addAction("Only display usable programs");
     showOnlyGoodPrograms->setCheckable(true);
     showOnlyGoodPrograms->setChecked(parent->settings->value("showgood").toBool());

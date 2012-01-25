@@ -57,9 +57,9 @@ public:
     void player2DroppedPiece(int col);
     void pauseButtonPressed();
     void goButtonPressed();
-    bool loadPlayer1Program(int index);
-    bool loadPlayer2Program(int index);
-    bool loadPlayerProgram(bool isPlayer1, int index);
+    bool loadPlayer1Program(int index, QString commandGiven = "");
+    bool loadPlayer2Program(int index, QString commandGiven = "");
+    bool loadPlayerProgram(bool isPlayer1, int index, QString commandGiven = "");
     bool goPlayer1Program(int index);
     bool goPlayer2Program(int index);
 };
