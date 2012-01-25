@@ -9,6 +9,7 @@ Board::Board(Moderator *parent) :parent(parent),
     isMoving = false;
     // Create the view and the scene!
     scene = new QGraphicsScene();
+
     this->setScene(scene);
     // Make it all cool and transparent and frameless and everything like that!
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -97,6 +98,7 @@ void Board::place(int col, int row)
 }
 void Board::resizeBoard(int width){
     oldWidth = this->width();
+    if(oldWidth>width&&width<100) return;
     qDebug() << oldWidth;
     this->scale(float(width)/float(oldWidth),float(width)/float(oldWidth));
     this->scene->setSceneRect(0,0,this->width(),height());

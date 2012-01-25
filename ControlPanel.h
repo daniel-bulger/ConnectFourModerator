@@ -64,6 +64,9 @@ public:
     QAction* boardBackgroundPreference;
     QAction* boardLockedPreference;
     QAction* boardBackgroundColor;
+    int boardRed;
+    int boardBlue;
+    int boardGreen;
     QAction* timeLimitPreference;
     QAction* doubleClickToPlacePiecePreference;
     QAction* showOnlyGoodPrograms;
@@ -96,6 +99,7 @@ public:
     void showHTML(QString data);
     static const int MOVE_TIME_LIMIT = 10;
  public slots:
+    void chooseBoardColors();
     void player1Debug();
     void player2Debug();
     void populateComboBoxes();

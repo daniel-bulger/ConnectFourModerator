@@ -16,7 +16,10 @@ ControlPanel::ControlPanel(Moderator *theParent)
     connect(boardBackgroundPreference,SIGNAL(toggled(bool)),this,SLOT(boardBackChanged(bool)));
     boardBackgroundPreference->setChecked(parent->settings->value("boardback").toBool());
     boardBackgroundColor = preferencesMenu->addAction(("Background color..."));
-
+    boardRed = parent->settings->value("boardr").toInt();
+    boardGreen = parent->settings->value("boardg").toInt();
+    boardBlue = parent->settings->value("boardb").toInt();
+    connect(boardBackgroundColor,SIGNAL(triggered()),this,SLOT(chooseBoardColors()));
     boardSizeSubmenu = preferencesMenu->addMenu("Board size");
     boardSmall = boardSizeSubmenu->addAction("Small");
     boardSmall->setCheckable(true);
@@ -59,7 +62,7 @@ ControlPanel::ControlPanel(Moderator *theParent)
     showOnlyGoodPrograms = preferencesMenu->addAction("Only display usable programs");
     showOnlyGoodPrograms->setCheckable(true);
     showOnlyGoodPrograms->setChecked(parent->settings->value("showgood").toBool());
-
+    connect(showOnlyGoodPrograms,SIGNAL(triggered()),this,SLOT(populateComboBoxes()));
     helpMenu = menuBar->addMenu("Help");
     helpMenu->addAction("README",this,SLOT(displayReadme()));
     helpMenu->addSeparator();
@@ -166,6 +169,9 @@ void ControlPanel::closeEvent(QCloseEvent *event){
     parent->settings->setValue("showgood",showOnlyGoodPrograms->isChecked());
     parent->settings->setValue("boardlock",boardLockedPreference->isChecked());
     parent->settings->setValue("boardback",boardBackgroundPreference->isChecked());
+    parent->settings->setValue("boardred",boardRed);
+    parent->settings->setValue("boardblue",boardBlue);
+    parent->settings->setValue("boardgreen",boardGreen);
     parent->settings->setValue("dblclicktoplace",doubleClickToPlacePiecePreference->isChecked());
     parent->settings->setValue("timelimit",timeLimitPreference->isChecked());
     if(boardSmall->isChecked()) parent->settings->setValue("boardsize",1);
@@ -183,6 +189,21 @@ void ControlPanel::showEvent(QShowEvent*){
         parent->gameBoard->setWindowState(Qt::WindowActive);
     }
 }
+void ControlPanel::chooseBoardColors(){
+    QColor col;
+    col.setRed(boardRed);
+    col.setBlue(boardBlue);
+    col.setGreen(boardGreen);
+    QColor newCol = QColorDialog::getColor(col);
+    if(newCol.isValid()){
+        boardRed = newCol.red();
+        boardBlue = newCol.blue();
+        boardGreen = newCol.green();
+        if(this->boardBackgroundPreference->isChecked())
+            parent->gameBoard->setBackgroundBrush(newCol);
+    }
+}
+
 void ControlPanel::hideEvent(QHideEvent *){
     if((parent->gameBoard)!=NULL){
         qDebug("HIDING CONTROLPANEL");
@@ -307,7 +328,7 @@ void ControlPanel::alert(QString message){
 void ControlPanel::boardBackChanged(bool isChecked){
     qDebug() << "back changed";
     if(isChecked){
-        parent->gameBoard->setBackgroundBrush(Qt::SolidPattern);
+        parent->gameBoard->setBackgroundBrush(QBrush(QColor(boardRed,boardBlue,boardGreen),Qt::SolidPattern));
     }
     else{
         parent->gameBoard->setBackgroundBrush(Qt::NoBrush);
