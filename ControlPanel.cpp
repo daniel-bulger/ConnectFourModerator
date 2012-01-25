@@ -13,12 +13,12 @@ ControlPanel::ControlPanel(Moderator *theParent)
     preferencesMenu = menuBar->addMenu("Preferences");
     boardBackgroundPreference = preferencesMenu->addAction("Board background");
     boardBackgroundPreference->setCheckable(true);
+    boardRed = parent->settings->value("boardred").toInt();
+    boardGreen = parent->settings->value("boardgreen").toInt();
+    boardBlue = parent->settings->value("boardblue").toInt();
     connect(boardBackgroundPreference,SIGNAL(toggled(bool)),this,SLOT(boardBackChanged(bool)));
     boardBackgroundPreference->setChecked(parent->settings->value("boardback").toBool());
     boardBackgroundColor = preferencesMenu->addAction(("Background color..."));
-    boardRed = parent->settings->value("boardr").toInt();
-    boardGreen = parent->settings->value("boardg").toInt();
-    boardBlue = parent->settings->value("boardb").toInt();
     connect(boardBackgroundColor,SIGNAL(triggered()),this,SLOT(chooseBoardColors()));
     boardSizeSubmenu = preferencesMenu->addMenu("Board size");
     boardSmall = boardSizeSubmenu->addAction("Small");
