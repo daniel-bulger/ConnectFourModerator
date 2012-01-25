@@ -63,6 +63,7 @@ public:
     QActionGroup* boardSizeChoices;
     QAction* boardBackgroundPreference;
     QAction* boardLockedPreference;
+    QAction* boardBackgroundColor;
     QAction* timeLimitPreference;
     QAction* doubleClickToPlacePiecePreference;
     QAction* showOnlyGoodPrograms;
@@ -94,7 +95,6 @@ public:
     void player2Wins();
     void showHTML(QString data);
     static const int MOVE_TIME_LIMIT = 10;
-
  public slots:
     void player1Debug();
     void player2Debug();

@@ -19,6 +19,10 @@ public:
     QString oldOutput;
     void sleep(int mSecs);
     QString readNewInput();
+    static int nextId;
+    static int getNextId(){
+        nextId++;
+        return nextId;
+    }
 };
-
 #endif // PLAYER_H

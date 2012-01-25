@@ -1,4 +1,6 @@
 #include "Player.h"
+int Player::nextId = 0;
+
 Player::Player(bool isPlayer1,QString progName, QStringList args):progName(progName),args(args)
 {
 
@@ -10,23 +12,24 @@ Player::Player(bool isPlayer1,QString progName, QStringList args):progName(progN
         //parsePath();
         isManual = false;
         if(isPlayer1){
-            file = new QFile("./player1.txt");
-            this->setStandardOutputFile("./player1.txt",QIODevice::Truncate);
-
-
-
+            QString fileName = "./player1";
+            fileName+=QString().setNum(this->getNextId());
+            fileName+=".txt";
+            file = new QFile(fileName);
+            this->setStandardOutputFile(fileName,QIODevice::Truncate);
         }
         else{
-            file = new QFile("./player2.txt");
-            this->setStandardOutputFile("./player2.txt",QIODevice::Truncate);
+            QString fileName = "./player2";
+            fileName+=QString().setNum(this->getNextId());
+            fileName+=".txt";
+            file = new QFile(fileName);
+            this->setStandardOutputFile(fileName,QIODevice::Truncate);
         }
         oldOutput = "";
         if(args==QStringList()) start(progName,QStringList());
         else start(progName,args);
 
             if (!waitForStarted()) {
-                qDebug("HI");
-
                 throw false;
             }
             sleep(100);
@@ -85,3 +88,4 @@ QString Player::readNewInput(){
     return ret;
 
 }
+

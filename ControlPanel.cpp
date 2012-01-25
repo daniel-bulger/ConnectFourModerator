@@ -15,6 +15,7 @@ ControlPanel::ControlPanel(Moderator *theParent)
     boardBackgroundPreference->setCheckable(true);
     connect(boardBackgroundPreference,SIGNAL(toggled(bool)),this,SLOT(boardBackChanged(bool)));
     boardBackgroundPreference->setChecked(parent->settings->value("boardback").toBool());
+    boardBackgroundColor = preferencesMenu->addAction(("Background color..."));
 
     boardSizeSubmenu = preferencesMenu->addMenu("Board size");
     boardSmall = boardSizeSubmenu->addAction("Small");
@@ -45,12 +46,15 @@ ControlPanel::ControlPanel(Moderator *theParent)
     boardLockedPreference = preferencesMenu->addAction("Lock board in place");
     boardLockedPreference->setCheckable(true);
     boardLockedPreference->setChecked(parent->settings->value("boardlock").toBool());
+
     timeLimitPreference = preferencesMenu->addAction("Enforce time limit");
     timeLimitPreference->setCheckable(true);
     timeLimitPreference->setChecked(parent->settings->value("timelimit").toBool());
+
     doubleClickToPlacePiecePreference = preferencesMenu->addAction("Double click to place piece");
     doubleClickToPlacePiecePreference->setCheckable(true);
     doubleClickToPlacePiecePreference->setChecked(parent->settings->value("dblclicktoplace").toBool());
+
     preferencesMenu->addSeparator();
     showOnlyGoodPrograms = preferencesMenu->addAction("Only display usable programs");
     showOnlyGoodPrograms->setCheckable(true);
@@ -149,14 +153,14 @@ ControlPanel::ControlPanel(Moderator *theParent)
     setLayout(layout);
     moveToStartingLocation();
     this->show();
-    populateComboBoxes();
-
+    QtConcurrent::run(this, &ControlPanel::populateComboBoxes);
 }
 
 ControlPanel::~ControlPanel()
 {
 
 }
+
 // Application will exit when this pane is closed.  Any handling before exit should go here.
 void ControlPanel::closeEvent(QCloseEvent *event){
     parent->settings->setValue("showgood",showOnlyGoodPrograms->isChecked());
@@ -192,6 +196,8 @@ void ControlPanel::populateComboBoxes(){
 
     player1FileName->insertItem(player1FileName->count(),"Choose...","NONE_SELECTED");
     player2FileName->insertItem(player2FileName->count(),"Choose...","NONE_SELECTED");
+    player1FileName->setCurrentIndex(0);
+    player2FileName->setCurrentIndex(0);
     player1FileName->insertItem(player1FileName->count(),"MANUAL","MANUAL_MODE");
     player2FileName->insertItem(player2FileName->count(),"MANUAL","MANUAL_MODE");
     player1FileName->insertItem(player1FileName->count(),"COMMAND","COMMAND_MODE");
