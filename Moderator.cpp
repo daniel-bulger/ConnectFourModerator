@@ -460,6 +460,7 @@ bool Moderator::loadPlayerProgram(bool isPlayer1, int boxIndex, QString commandG
             args = text.split(' ');
             args.pop_front();
         }
+        else return false;
     }
     try{
     player = new Player(isPlayer1,progName,args);
@@ -487,6 +488,7 @@ bool Moderator::loadPlayerProgram(bool isPlayer1, int boxIndex, QString commandG
             }
         }
         else{
+            playerFileName->setItemData(playerFileName->findText("COMMAND"),QVariant("COMMAND_MODE"));
             loadFailed(progName);
             return false;
         }

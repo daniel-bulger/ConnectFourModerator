@@ -69,8 +69,8 @@ Board::Board(Moderator *parent) :parent(parent),
 float Board::OFFSET_LEFT(){return (-1.5/1574.0)*(originalWidth);}
 float Board::COL_WIDTH(){return float((169.0/1574.0)*(originalWidth));}
 float Board::COL_HEIGHT(){return COL_WIDTH();}
-float Board::H_SPACING(){return float((41.9/1574)*(originalWidth));}
-float Board::V_SPACING(){return float((21.5/1260.0)*(originalHeight));}
+float Board::H_SPACING(){return float((40.6/1574)*(originalWidth));}
+float Board::V_SPACING(){return float((21.0/1260.0)*(originalHeight));}
 float Board::OFFSET_BOTTOM(){return float((68.0/1260)*(originalHeight));}
 
 void Board::place(int col, int row)
