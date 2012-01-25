@@ -228,7 +228,7 @@ void Board::mouseDoubleClickEvent(QMouseEvent *event){
 
 void Board::mousePressEvent(QMouseEvent *event){
     event->accept();
-    if((event->button()==Qt::LeftButton)&&(((event->y()>this->height()*.95))&&(event->x()>this->width()*.95)))  {
+    if((event->button()==Qt::LeftButton)&&(((event->y()>this->height()*.925))&&(event->x()>this->width()*.925)))  {
         lastMousePos = event->globalPos();
         widthAtPress = this->width();
         isResizing = true;
