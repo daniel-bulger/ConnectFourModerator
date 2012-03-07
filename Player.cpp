@@ -12,6 +12,7 @@ Player::Player(bool isPlayer1,QString progName, QStringList args):progName(progN
         //parsePath();
         isManual = false;
         if(isPlayer1){
+            // TODO figure out where to put these
             QString fileName = "./player1";
             fileName+=QString().setNum(this->getNextId());
             fileName+=".txt";

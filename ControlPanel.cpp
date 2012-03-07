@@ -1,9 +1,14 @@
 #include "ControlPanel.h"
-
-ControlPanel::ControlPanel(Moderator *theParent)
+#define GO_BUTTON_START_TEXT "GO!"
+#define GO_BUTTON_STOP_TEXT "STOP"
+#define PAUSE_BUTTON_RESUME_TEXT "Resume"
+#define PAUSE_BUTTON_PAUSE_TEXT "Pause"
+ControlPanel::ControlPanel()
     : QWidget(0)
 {
-    parent = theParent;
+    settings = new QSettings("Minds and Machines", "Connect Four");
+    parent = new Moderator();
+    gameBoard = new Board(this);
     //init menu bar
     menuBar = new QMenuBar(this);
     fileMenu = menuBar->addMenu("File");
@@ -13,26 +18,26 @@ ControlPanel::ControlPanel(Moderator *theParent)
     preferencesMenu = menuBar->addMenu("Preferences");
     boardBackgroundPreference = preferencesMenu->addAction("Board background");
     boardBackgroundPreference->setCheckable(true);
-    boardRed = parent->settings->value("boardred").toInt();
-    boardGreen = parent->settings->value("boardgreen").toInt();
-    boardBlue = parent->settings->value("boardblue").toInt();
+    boardRed = settings->value("boardred").toInt();
+    boardGreen = settings->value("boardgreen").toInt();
+    boardBlue = settings->value("boardblue").toInt();
     connect(boardBackgroundPreference,SIGNAL(toggled(bool)),this,SLOT(boardBackChanged(bool)));
-    boardBackgroundPreference->setChecked(parent->settings->value("boardback").toBool());
+    boardBackgroundPreference->setChecked(settings->value("boardback").toBool());
     boardBackgroundColor = preferencesMenu->addAction(("Background color..."));
     connect(boardBackgroundColor,SIGNAL(triggered()),this,SLOT(chooseBoardColors()));
     boardSizeSubmenu = preferencesMenu->addMenu("Board size");
     boardSmall = boardSizeSubmenu->addAction("Small");
     boardSmall->setCheckable(true);
-    boardSmall->setChecked(parent->settings->value("boardsize").toInt()==1);
+    boardSmall->setChecked(settings->value("boardsize").toInt()==1);
     boardMedium = boardSizeSubmenu->addAction("Medium");
     boardMedium->setCheckable(true);
-    boardMedium->setChecked(parent->settings->value("boardsize").toInt()==2);
+    boardMedium->setChecked(settings->value("boardsize").toInt()==2);
     boardLarge = boardSizeSubmenu->addAction("Large");
     boardLarge->setCheckable(true);
-    boardLarge->setChecked(parent->settings->value("boardsize").toInt()==3);
+    boardLarge->setChecked(settings->value("boardsize").toInt()==3);
     boardAuto = boardSizeSubmenu->addAction("Auto");
     boardAuto->setCheckable(true);
-    boardAuto->setChecked(parent->settings->value("boardsize").toInt()==0);
+    boardAuto->setChecked(settings->value("boardsize").toInt()==0);
 
     connect(boardAuto,SIGNAL(toggled(bool)),this,SLOT(boardAutoChanged(bool)));
     connect(boardSmall,SIGNAL(toggled(bool)),this,SLOT(boardSmallChanged(bool)));
@@ -48,22 +53,25 @@ ControlPanel::ControlPanel(Moderator *theParent)
 
     boardLockedPreference = preferencesMenu->addAction("Lock board in place");
     boardLockedPreference->setCheckable(true);
-    boardLockedPreference->setChecked(parent->settings->value("boardlock").toBool());
+    boardLockedPreference->setChecked(settings->value("boardlock").toBool());
 
     doubleClickToPlacePiecePreference = preferencesMenu->addAction("Double click to place piece");
     doubleClickToPlacePiecePreference->setCheckable(true);
-    doubleClickToPlacePiecePreference->setChecked(parent->settings->value("dblclicktoplace").toBool());
+    doubleClickToPlacePiecePreference->setChecked(settings->value("dblclicktoplace").toBool());
 
     preferencesMenu->addSeparator();
 
     timeLimitPreference = preferencesMenu->addAction("Enforce time limit");
     timeLimitPreference->setCheckable(true);
-    timeLimitPreference->setChecked(parent->settings->value("timelimit").toBool());
+    timeLimitPreference->setChecked(settings->value("timelimit").toBool());
 
     showOnlyGoodPrograms = preferencesMenu->addAction("Only display usable programs");
     showOnlyGoodPrograms->setCheckable(true);
-    showOnlyGoodPrograms->setChecked(parent->settings->value("showgood").toBool());
+    showOnlyGoodPrograms->setChecked(settings->value("showgood").toBool());
     connect(showOnlyGoodPrograms,SIGNAL(triggered()),this,SLOT(populateComboBoxes()));
+    trainerMenu = menuBar->addMenu("Training");
+    trainerMenu->addAction("Run trials with current AIs",this,SLOT(runMassTrials()));
+    trainerMenu->addAction("Advanced training...",this,SLOT(chooseAIsToTrain()));
     helpMenu = menuBar->addMenu("Help");
     helpMenu->addAction("README",this,SLOT(displayReadme()));
     helpMenu->addSeparator();
@@ -77,9 +85,10 @@ ControlPanel::ControlPanel(Moderator *theParent)
     player1Label = new QLabel("Player 1:");
     player2Label = new QLabel("Player 2:");
     //choose your directory
+    AIFolder = new QString(settings->value("AI_DIRECTORY").toString());
     chooseDirectoryButton = new QPushButton("Load from...");
     chooseDirectoryText = new QLineEdit();
-    chooseDirectoryText->setText(*(parent->AIFolder));
+    chooseDirectoryText->setText(*(AIFolder));
     //initializing players' AI file name combo boxes.
     player1FileName = new QComboBox();
     player1FileName->setMinimumWidth(100);
@@ -156,6 +165,29 @@ ControlPanel::ControlPanel(Moderator *theParent)
     layout->addWidget(go);
     setLayout(layout);
     moveToStartingLocation();
+
+    connect(go, SIGNAL(clicked()), this, SLOT(goButtonPressed()));
+    connect(pause, SIGNAL(clicked()), this, SLOT(pauseButtonPressed()));
+    connect(parent,SIGNAL(gameOver(int)),this,SLOT(displayWinner(int)));
+    connect(chooseDirectoryText,SIGNAL(textEdited()),parent,SLOT(directoryTextBoxEdited()));
+    connect(chooseDirectoryButton,SIGNAL(clicked()),parent,SLOT(chooseDirectory()));
+    connect(player1FileName, SIGNAL(currentIndexChanged(int)), parent, SLOT(loadPlayer1Program(int)));
+    connect(player2FileName, SIGNAL(currentIndexChanged(int)), parent, SLOT(loadPlayer2Program(int)));
+    connect(timePerTurnTimer,SIGNAL(timeout()),parent,SLOT(decrementTimePerTurnTimer()));
+    connect(timer, SIGNAL(timeout()), parent, SLOT(updateTimer()));
+    connect(parent,SIGNAL(timeUntilMoveChanged(int,bool)),this,SLOT(updateTimeRemainingSlider(int,bool)));
+    connect(parent->timer,SIGNAL(timeout()),this,SLOT(updateCurrentPlayerTimeRemainingSlider()));
+    connect(parent,SIGNAL(consoleOutput(QString)),this,SLOT(console(QString)));
+    connect(parent,SIGNAL(piecePlaced(int,int)),this,SLOT(placePieceOnBoard(int,int)));
+    connect(parent,SIGNAL(player1ToMove(bool)),this,SLOT(playerToMoveBoardUpdater(bool)));
+    connect(parent,SIGNAL(player2ToMove(bool)),this,SLOT(playerToMoveBoardUpdater(bool)));
+    connect(parent,SIGNAL(loadFailed(QString)),this,SLOT(loadFailed(QString)));
+    connect(parent,SIGNAL(gameHasEnded()),this,SLOT(gameHasEnded()));
+    connect(parent,SIGNAL(loadSuccess(QStringList)),this,SLOT(showSuccessfulLoad(QStringList)));
+    connect(this->timePerTurnSlider,SIGNAL(valueChanged(int)),parent,SLOT(setTimeUntilMove(int)));
+    connect(parent,SIGNAL(acceptManualInput()),this,SLOT(connectManualInputToModerator()));
+    parent->setTimeUntilMove(timePerTurnSlider->value());
+
     this->show();
     QtConcurrent::run(this, &ControlPanel::populateComboBoxes);
 }
@@ -164,21 +196,20 @@ ControlPanel::~ControlPanel()
 {
 
 }
-
 // Application will exit when this pane is closed.  Any handling before exit should go here.
 void ControlPanel::closeEvent(QCloseEvent *event){
-    parent->settings->setValue("showgood",showOnlyGoodPrograms->isChecked());
-    parent->settings->setValue("boardlock",boardLockedPreference->isChecked());
-    parent->settings->setValue("boardback",boardBackgroundPreference->isChecked());
-    parent->settings->setValue("boardred",boardRed);
-    parent->settings->setValue("boardblue",boardBlue);
-    parent->settings->setValue("boardgreen",boardGreen);
-    parent->settings->setValue("dblclicktoplace",doubleClickToPlacePiecePreference->isChecked());
-    parent->settings->setValue("timelimit",timeLimitPreference->isChecked());
-    if(boardSmall->isChecked()) parent->settings->setValue("boardsize",1);
-    if(boardMedium->isChecked()) parent->settings->setValue("boardsize",2);
-    if(boardLarge->isChecked()) parent->settings->setValue("boardsize",3);
-    if(boardAuto->isChecked()) parent->settings->setValue("boardsize",0);
+    settings->setValue("showgood",showOnlyGoodPrograms->isChecked());
+    settings->setValue("boardlock",boardLockedPreference->isChecked());
+    settings->setValue("boardback",boardBackgroundPreference->isChecked());
+    settings->setValue("boardred",boardRed);
+    settings->setValue("boardblue",boardBlue);
+    settings->setValue("boardgreen",boardGreen);
+    settings->setValue("dblclicktoplace",doubleClickToPlacePiecePreference->isChecked());
+    settings->setValue("timelimit",timeLimitPreference->isChecked());
+    if(boardSmall->isChecked()) settings->setValue("boardsize",1);
+    if(boardMedium->isChecked()) settings->setValue("boardsize",2);
+    if(boardLarge->isChecked()) settings->setValue("boardsize",3);
+    if(boardAuto->isChecked()) settings->setValue("boardsize",0);
 
 
 
@@ -186,8 +217,8 @@ void ControlPanel::closeEvent(QCloseEvent *event){
 }
 void ControlPanel::showEvent(QShowEvent*){
     qDebug("SHOWING CONTROLPANEL");
-    if((parent->gameBoard)!=NULL){
-        parent->gameBoard->setWindowState(Qt::WindowActive);
+    if((gameBoard)!=NULL){
+        gameBoard->setWindowState(Qt::WindowActive);
     }
 }
 void ControlPanel::chooseBoardColors(){
@@ -201,14 +232,14 @@ void ControlPanel::chooseBoardColors(){
         boardBlue = newCol.blue();
         boardGreen = newCol.green();
         if(this->boardBackgroundPreference->isChecked())
-            parent->gameBoard->setBackgroundBrush(newCol);
+            gameBoard->setBackgroundBrush(newCol);
     }
 }
 
 void ControlPanel::hideEvent(QHideEvent *){
-    if((parent->gameBoard)!=NULL){
+    if((gameBoard)!=NULL){
         qDebug("HIDING CONTROLPANEL");
-        parent->gameBoard->setWindowState(Qt::WindowMinimized);
+        gameBoard->setWindowState(Qt::WindowMinimized);
     }
 }
 
@@ -224,7 +255,7 @@ void ControlPanel::populateComboBoxes(){
     player2FileName->insertItem(player2FileName->count(),"MANUAL","MANUAL_MODE");
     player1FileName->insertItem(player1FileName->count(),"COMMAND","COMMAND_MODE");
     player2FileName->insertItem(player2FileName->count(),"COMMAND","COMMAND_MODE");
-    QDirIterator it(*(parent->AIFolder), QDirIterator::Subdirectories);
+    QDirIterator it(*(AIFolder), QDirIterator::Subdirectories);
     while (it.hasNext()) {
         QString next(it.next());
         QStringList strings = next.split('/');
@@ -249,7 +280,7 @@ void ControlPanel::populateComboBox(bool isPlayer1){
     playerFileName->insertItem(playerFileName->count(),"Choose...","NONE_SELECTED");
     playerFileName->insertItem(playerFileName->count(),"MANUAL","MANUAL_MODE");
     playerFileName->insertItem(playerFileName->count(),"COMMAND","COMMAND_MODE");
-    QDirIterator it(*(parent->AIFolder), QDirIterator::Subdirectories);
+    QDirIterator it(*(AIFolder), QDirIterator::Subdirectories);
     while (it.hasNext()) {
         QString next(it.next());
         QStringList strings = next.split('/');
@@ -274,16 +305,63 @@ void ControlPanel::player2Debug(){
         console(input);
     }
 }
+void ControlPanel::goButtonPressed(){
+    if(parent->gamestate==GAME_STOPPED){
+        if(parent->startGame(getFileNameFromPlayerSelector(true),getFileNameFromPlayerSelector(false),*AIFolder)){
+            setGoButton();
+            player1TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
+            player2TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
+            gameBoard->clearPieces();
+            player1FileName->setEnabled(false);
+            player2FileName->setEnabled(false);
+        }
+        else{
+        }
+    }
+    else{
+        gameBoard->gameResult(3);
+        parent->endGame();
+        timePerTurnTimer->stop();
+        timer->stop();
+        player1FileName->setEnabled(true);
+        player2FileName->setEnabled(true);
+        player1TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
+        player2TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
+        resetGoButton();
+    }
+}
+void ControlPanel::pauseButtonPressed(){
+    if(pause->text()==PAUSE_BUTTON_PAUSE_TEXT){
+        qDebug() << "Pause button pressed" << endl;
+        this->setPauseButton();
+        parent->pauseGame();
+    }
+    else{if(pause->text()==PAUSE_BUTTON_RESUME_TEXT){
+        qDebug() << "Resume button pressed" << endl;
+
+        this->resetPauseButton();
+        parent->resumeGame();
+    }}
+}
+void ControlPanel::gameHasEnded(){
+    timePerTurnTimer->stop();
+    timer->stop();
+    player1FileName->setEnabled(true);
+    player2FileName->setEnabled(true);
+    player1TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
+    player2TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
+    resetGoButton();
+}
 
 void ControlPanel::resetGoButton(){
     QPalette pal = go->palette();
     pal.setColor(QPalette::ButtonText, Qt::darkGreen);
     go->setPalette(pal);
-    go->setText("GO!");
+    go->setText(GO_BUTTON_START_TEXT);
     hidePauseButton();
 }
 void ControlPanel::setGoButton(){
-    go->setText("STOP!");
+    go->setText(GO_BUTTON_STOP_TEXT);
     QPalette pal = go->palette();
     pal.setColor(QPalette::ButtonText, Qt::red);
     go->setPalette(pal);
@@ -301,7 +379,7 @@ void ControlPanel::hidePauseButton(){
 }
 
 void ControlPanel::setPauseButton(){
-    pause->setText("Resume");
+    pause->setText(PAUSE_BUTTON_RESUME_TEXT);
     QFont pauseFont = pause->font();
     pauseFont.setPointSize(36);
     pauseFont.setBold(true);
@@ -311,7 +389,7 @@ void ControlPanel::setPauseButton(){
     pause->setPalette(pal);
 }
 void ControlPanel::resetPauseButton(){
-    pause->setText("Pause");
+    pause->setText(PAUSE_BUTTON_PAUSE_TEXT);
     QFont pauseFont = pause->font();
     pauseFont.setPointSize(36);
     pauseFont.setBold(true);
@@ -329,11 +407,17 @@ void ControlPanel::alert(QString message){
 void ControlPanel::boardBackChanged(bool isChecked){
     qDebug() << "back changed";
     if(isChecked){
-        parent->gameBoard->setBackgroundBrush(QBrush(QColor(boardRed,boardBlue,boardGreen),Qt::SolidPattern));
+        gameBoard->setBackgroundBrush(QBrush(QColor(boardRed,boardBlue,boardGreen),Qt::SolidPattern));
     }
     else{
-        parent->gameBoard->setBackgroundBrush(Qt::NoBrush);
+        gameBoard->setBackgroundBrush(Qt::NoBrush);
     }
+}
+void ControlPanel::runMassTrials(){
+
+}
+void ControlPanel::chooseAIsToTrain(){
+
 }
 
 void ControlPanel::boardAutoChanged(bool isChecked,bool recur){
@@ -342,10 +426,10 @@ void ControlPanel::boardAutoChanged(bool isChecked,bool recur){
         int width = QApplication::desktop()->width();
         int height = QApplication::desktop()->height();
         if((width * 1574 / 1260) > (height)){
-            parent->gameBoard->resizeBoard(width*2/3);
+            gameBoard->resizeBoard(width*2/3);
         }
         else{
-            parent->gameBoard->resizeBoard(height*2/3*1574/1260);
+            gameBoard->resizeBoard(height*2/3*1574/1260);
         }
     }
     if(recur) boardAutoChanged(isChecked,false);
@@ -353,14 +437,14 @@ void ControlPanel::boardAutoChanged(bool isChecked,bool recur){
 void ControlPanel::boardSmallChanged(bool isChecked,bool recur){
 
     if(isChecked){
-        parent->gameBoard->resizeBoard(500);
+        gameBoard->resizeBoard(500);
     }
     if(recur) boardSmallChanged(isChecked,false);
 }
 void ControlPanel::boardMediumChanged(bool isChecked,bool recur){
 
     if(isChecked){
-        parent->gameBoard->resizeBoard(1000);
+        gameBoard->resizeBoard(1000);
     }
     if(recur) boardMediumChanged(isChecked,false);
 
@@ -368,7 +452,7 @@ void ControlPanel::boardMediumChanged(bool isChecked,bool recur){
 void ControlPanel::boardLargeChanged(bool isChecked,bool recur){
 
     if(isChecked){
-        parent->gameBoard->resizeBoard(1500);
+        gameBoard->resizeBoard(1500);
     }
     if(recur) boardLargeChanged(isChecked,false);
 
@@ -402,15 +486,6 @@ void ControlPanel::showHTML(QString data){
     newWindow->show();
 }
 
-void ControlPanel::loadFailed(QString player)
-{
-    QMessageBox fail;
-    QString message = "Player " + player + " failed to load!";
-    console(message);
-    fail.setText(message);
-    fail.exec();
-}
-
 void ControlPanel::moveToStartingLocation(){
     int center_x = QDesktopWidget().availableGeometry().center().x();
     int center_y = QDesktopWidget().availableGeometry().center().y();
@@ -423,4 +498,84 @@ void ControlPanel::console(QString message){
     QScrollBar *sb = moveHistory->verticalScrollBar();
     sb->setValue(sb->maximum());
 }
+void ControlPanel::updateTimeRemainingSlider(int timeRemaining, bool isPlayer1){
+    if(isPlayer1)
+        this->player1TimeRemainingBar->setValue(timeRemaining);
+    else
+        this->player2TimeRemainingBar->setValue(timeRemaining);
+}
+void ControlPanel::updateCurrentPlayerTimeRemainingSlider(){
+    int currentPlayer = parent->getCurrentPlayer();
+    if(currentPlayer==1)
+        this->player1TimeRemainingBar->setValue(player1TimeRemainingBar->value()-10);
+    if(currentPlayer==2)
+        this->player2TimeRemainingBar->setValue(player2TimeRemainingBar->value()-10);
+}
+void ControlPanel::displayWinner(int winner){
+    gameBoard->gameResult(winner);
+}
+void ControlPanel::placePieceOnBoard(int x, int y){
+    gameBoard->place(x,y);
+    qDebug() << "Placed piece at " << x <<", " << y << endl;
+}
+void ControlPanel::playerToMoveBoardUpdater(bool isManual){
+    if(!isManual)
+        gameBoard->highlightGraphic->hide();
+    else
+        gameBoard->mouseMoveEvent();
+}
+void ControlPanel::chooseDirectory(){
+    QString folder = QFileDialog::getExistingDirectory(0,"Choose the folder where your AIs are located",settings->value("AI_DIRECTORY").toString());
+    if(folder!=""){
+    chooseDirectoryText->setText(folder);
+    AIFolder = new QString(folder);
+    settings->setValue("AI_DIRECTORY",folder);
+    populateComboBoxes();
+    }
+}
+void ControlPanel::loadFailed(QString player)
+{
+    QMessageBox fail;
+    QString message = "Player " + player + " failed to load!";
+    console(message);
+    fail.setText(message);
+    fail.exec();
+}
+QStringList ControlPanel::getFileNameFromPlayerSelector(bool isPlayer1){
+    QComboBox* playerFileName;
+    QString progName;
+    QStringList args;
+    if(isPlayer1)
+        playerFileName = player1FileName;
+    else
+        playerFileName = player2FileName;
 
+    QString friendlyName = playerFileName->itemText(playerFileName->currentIndex());
+    progName = playerFileName->itemData(playerFileName->currentIndex()).toString();
+    if(friendlyName!="COMMAND")playerFileName->setItemData(playerFileName->findText("COMMAND"),QVariant("COMMAND_MODE"));
+    if(progName=="NONE_SELECTED") return QStringList();
+    if(progName=="") return QStringList();
+    if(progName=="COMMAND_MODE"){
+        bool ok = false;
+        QString text = QInputDialog::getText(this, tr("Advanced program entry"),tr("Enter a command that will run your AI."), QLineEdit::Normal,"", &ok);
+        if(ok&&text!=""){
+            playerFileName->setItemData(playerFileName->currentIndex(),QVariant(text));
+            progName = text.split(' ')[0];
+            args = text.split(' ');
+            if(!args.isEmpty())
+                args.pop_front();
+        }
+        else return QStringList();
+    }
+    QStringList retVal = QStringList(progName);
+    retVal.append(args);
+    qDebug() << retVal;
+    return retVal;
+}
+void ControlPanel::showSuccessfulLoad(QStringList fullProgName){
+    QString friendlyName = fullProgName.last().split("/").last();
+    console("Player "+friendlyName+" ready");
+}
+void ControlPanel::connectManualInputToModerator(){
+    connect(gameBoard,SIGNAL(pieceDroppedByPlayer(int)),this->parent,SLOT(playerDroppedPiece(int)));
+}

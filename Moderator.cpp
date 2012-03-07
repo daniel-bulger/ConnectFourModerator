@@ -1,33 +1,16 @@
 
 #include "Moderator.h"
-
 Moderator::Moderator(QWidget *parent)
     : QMainWindow(parent)
 {
     this->setVisible(false);
     gamestate = GAME_STOPPED;
-
+    timer = new QTimer();
+    timePerTurnTimer = new QTimer();
+    connect(this->timePerTurnTimer,SIGNAL(timeout()),this,SLOT(decrementTimePerTurnTimer()));
+    timePerMove = 10000;
+    delayBeforeMove = 1000;
     //choose your directory
-    settings = new QSettings("Minds and Machines", "Connect Four");
-    AIFolder = new QString(settings->value("AI_DIRECTORY").toString());
-    //initialize board
-    gameBoard = new Board(this);
-    //initialize control panel
-    controlPanel = new ControlPanel(this);
-    qDebug("here");
-
-
-    connect(controlPanel->chooseDirectoryText,SIGNAL(textEdited()),this,SLOT(directoryTextBoxEdited()));
-    connect(controlPanel->chooseDirectoryButton,SIGNAL(clicked()),this,SLOT(chooseDirectory()));
-    connect(controlPanel->player1FileName, SIGNAL(currentIndexChanged(int)), this, SLOT(loadPlayer1Program(int)));
-    connect(controlPanel->player2FileName, SIGNAL(currentIndexChanged(int)), this, SLOT(loadPlayer2Program(int)));
-    connect(controlPanel->timePerTurnTimer,SIGNAL(timeout()),this,SLOT(decrementTimePerTurnTimer()));
-    connect(controlPanel->timer, SIGNAL(timeout()), this, SLOT(updateTimer()));
-
-    //initializing game start/stop button
-    connect(controlPanel->go, SIGNAL(clicked()), this, SLOT(goButtonPressed()));
-    connect(controlPanel->pause, SIGNAL(clicked()), this, SLOT(pauseButtonPressed()));
-
     player1GoesFirst = true;
     player1 = NULL;
     player2 = NULL;
@@ -36,16 +19,6 @@ Moderator::Moderator(QWidget *parent)
 Moderator::~Moderator()
 {
 
-}
-
-void Moderator::chooseDirectory(){
-    QString folder = QFileDialog::getExistingDirectory(0,"Choose the folder where your AIs are located",settings->value("AI_DIRECTORY").toString());
-    if(folder!=""){
-    controlPanel->chooseDirectoryText->setText(folder);
-    AIFolder = new QString(folder);
-    settings->setValue("AI_DIRECTORY",folder);
-    controlPanel->populateComboBoxes();
-    }
 }
 
 void Moderator::directoryTextBoxEdited(){
@@ -67,7 +40,8 @@ bool Moderator::playerMove(bool isPlayer1,int input){
         }
         return false;
     }
-    gameBoard->place(playerOutput.second.first,playerOutput.second.second);
+    qDebug() << "HELLO THERE" << endl;
+    emit(piecePlaced(playerOutput.second.first,playerOutput.second.second));
 
     if(playerOutput.first==-2){
         tieGame();
@@ -109,15 +83,13 @@ void Moderator::lookForMove(){
             qDebug() << "DOME" ;
         }
         gamestate = PLAYER_2_TO_MOVE;
-        if(!player2->isManual){
-            gameBoard->highlightGraphic->hide();
-        }
-        else{
-            gameBoard->mouseMoveEvent();
-        }
-        controlPanel->player1TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
-        controlPanel->player2TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
-        timeUntilMove = controlPanel->timePerTurnSlider->sliderPosition() * 10;
+        emit(player2ToMove(player2->isManual));
+        timeRemaining = timePerMove;
+        timeUntilMove = delayBeforeMove;
+        emit timeUntilMoveChanged(timePerMove,true);
+        emit timeUntilMoveChanged(timePerMove,false);
+
+
     }
     else{
     if(gamestate==PLAYER_2_TO_MOVE && player2MadeAMove){
@@ -137,15 +109,11 @@ void Moderator::lookForMove(){
         }
 
         gamestate = PLAYER_1_TO_MOVE;
-        if(!player1->isManual){
-            gameBoard->highlightGraphic->hide();
-        }
-        else{
-            gameBoard->mouseMoveEvent();
-        }
-        controlPanel->player1TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
-        controlPanel->player2TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
-        timeUntilMove = controlPanel->timePerTurnSlider->sliderPosition() * 10;
+        emit(player1ToMove(player1->isManual));
+        timeRemaining = timePerMove;
+        timeUntilMove = delayBeforeMove;
+        emit timeUntilMoveChanged(timePerMove,true);
+        emit timeUntilMoveChanged(timePerMove,false);
     }
     }
 }
@@ -194,7 +162,7 @@ void Moderator::player2DroppedPiece(int col){
 }
 
 void Moderator::player1Wins(bool dueToError){
-    gameBoard->gameResult(1);
+    emit gameOver(1);
     console("PLAYER 1 WINS");
     if(dueToError){
         player1->write("0\n");
@@ -207,7 +175,7 @@ void Moderator::player1Wins(bool dueToError){
     endGame();
 }
 void Moderator::player2Wins(bool dueToError){
-    gameBoard->gameResult(2);
+    emit gameOver(2);
     console("PLAYER 2 WINS");
     if(dueToError){
         player1->write("0\n");
@@ -220,7 +188,7 @@ void Moderator::player2Wins(bool dueToError){
     endGame();
 }
 void Moderator::tieGame(){
-    gameBoard->gameResult(0);
+    emit gameOver(0);
     console("TIE GAME");
     player1->write("-3\n");
     player2->write("-3\n");
@@ -239,154 +207,122 @@ void Moderator::endGame(){
     QString moveString = currentGame.getMoveString();
     if(moveString!=""){
         moveString +="\n";
-        QString logFilePath = *AIFolder;
-        logFilePath+= "/log.txt";
-        qDebug() <<logFilePath;
-        QFile file(logFilePath);
+        QString filePath = logFilePath;
+        filePath+= "/log.txt";
+        qDebug() <<filePath;
+        QFile file(filePath);
         file.open(QIODevice::WriteOnly | QIODevice::Append);
         file.write(QByteArray(moveString.toStdString().c_str()));
         file.close();
     }
+
     delete player1;
     player1 = NULL;
     delete player2;
     player2 = NULL;
     gamestate = GAME_STOPPED;
-    controlPanel->timePerTurnTimer->stop();
-    controlPanel->timer->stop();
-    controlPanel->player1FileName->setEnabled(true);
-    controlPanel->player2FileName->setEnabled(true);
-    controlPanel->player1TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
-    controlPanel->player2TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
-    controlPanel->resetGoButton();
+    emit gameHasEnded();
 }
+bool Moderator::startGame(QStringList player1FileName, QStringList player2FileName, QString logFolder){
+    logFilePath = logFolder;
+    if(startProgram(player1FileName,true)&&startProgram(player2FileName,false)){
 
-void Moderator::goButtonPressed(){
-    if(gamestate==GAME_STOPPED){
-        if(goPlayer1Program(controlPanel->player1FileName->currentIndex())&&goPlayer2Program(controlPanel->player2FileName->currentIndex())){
-            controlPanel->setGoButton();
-            controlPanel->player1TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
-            controlPanel->player2TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
-            gameBoard->clearPieces();
-            if (player1GoesFirst) {
-                player1GoesFirst = false;
-                if(!player1->isManual){
-                    player1->write("1\n");
-                    player1->waitForBytesWritten();
-                }
-                if(!player2->isManual){
-                    player2->write("2\n");
-                    player2->waitForBytesWritten();
-                    gamestate=PLAYER_2_QUESTION_MARK;
-                }
-                else{
-                    gamestate=PLAYER_1_TO_MOVE;
-                }
-            }
-            else {
-                player1GoesFirst = true;
-                if(!player2->isManual){
-                    player2->write("1\n");
-                    player2->waitForBytesWritten();
-                }
-                if(!player1->isManual){
-                    player1->write("2\n");
-                    player1->waitForBytesWritten();
-                    gamestate=PLAYER_1_QUESTION_MARK;
-                }
-                else{
-                    gamestate=PLAYER_2_TO_MOVE;
-                }
-            }
-            if(gamestate==PLAYER_1_QUESTION_MARK){
-                if(player1->getQuestionMark()){
-                    gamestate = PLAYER_2_TO_MOVE;
-                }
-                else{
-                    console("Player 1 failed to output a '?', so player 2 wins.");
-                    player2Wins();
-                    return;
-                }
-            }
-            if(gamestate==PLAYER_2_QUESTION_MARK){
-
-                if(player2->getQuestionMark()){
-                    gamestate = PLAYER_1_TO_MOVE;
-                }
-                else{
-                    console("Player 2 failed to output a '?', so player 1 wins.");
-                    player1Wins();
-                    return;
-                }
-
-            }
-            controlPanel->player1FileName->setEnabled(false);
-            controlPanel->player2FileName->setEnabled(false);
-            player1MadeAMove = false;
-            player2MadeAMove = false;
+        if (player1GoesFirst) {
+            player1GoesFirst = false;
             if(!player1->isManual){
-                connect(player1,SIGNAL(readyReadStandardError()),this,SLOT(player1Debug()));
-            }
-            else{
-                connect(gameBoard,SIGNAL(pieceDroppedByPlayer(int)),this,SLOT(playerDroppedPiece(int)));
+                player1->write("1\n");
+                player1->waitForBytesWritten();
             }
             if(!player2->isManual){
-                connect(player2,SIGNAL(readyReadStandardError()),this,SLOT(player2Debug()));
+                player2->write("2\n");
+                player2->waitForBytesWritten();
+                gamestate=PLAYER_2_QUESTION_MARK;
             }
             else{
-                connect(gameBoard,SIGNAL(pieceDroppedByPlayer(int)),this,SLOT(playerDroppedPiece(int)));
+                gamestate=PLAYER_1_TO_MOVE;
             }
-            timeUntilMove = controlPanel->timePerTurnSlider->sliderPosition() * 10;
-            controlPanel->timePerTurnTimer->start(10);
-            controlPanel->timer->start(10);
-            currentGame = Game();
         }
+        else {
+            player1GoesFirst = true;
+            if(!player2->isManual){
+                player2->write("1\n");
+                player2->waitForBytesWritten();
+            }
+            if(!player1->isManual){
+                player1->write("2\n");
+                player1->waitForBytesWritten();
+                gamestate=PLAYER_1_QUESTION_MARK;
+            }
+            else{
+                gamestate=PLAYER_2_TO_MOVE;
+            }
+        }
+        if(gamestate==PLAYER_1_QUESTION_MARK){
+            if(player1->getQuestionMark()){
+                gamestate = PLAYER_2_TO_MOVE;
+            }
+            else{
+                console("Player 1 failed to output a '?', so player 2 wins.");
+                player2Wins();
+                emit loadFailed(player1FileName.join(" "));
+                return false;
+            }
+        }
+        if(gamestate==PLAYER_2_QUESTION_MARK){
+
+            if(player2->getQuestionMark()){
+                gamestate = PLAYER_1_TO_MOVE;
+            }
+            else{
+                console("Player 2 failed to output a '?', so player 1 wins.");
+                player1Wins();
+                emit loadFailed(player2FileName.join(" "));
+                return false;
+            }
+
+        }
+        player1MadeAMove = false;
+        player2MadeAMove = false;
+        if(!player1->isManual){
+            connect(player1,SIGNAL(readyReadStandardError()),this,SLOT(player1Debug()));
+        }
+        else{
+            emit acceptManualInput();
+        }
+        if(!player2->isManual){
+            connect(player2,SIGNAL(readyReadStandardError()),this,SLOT(player2Debug()));
+        }
+        else{
+            emit acceptManualInput();
+        }
+        timeRemaining = timePerMove;
+        timeUntilMove = delayBeforeMove;
+        emit timeUntilMoveChanged(timePerMove,true);
+        emit timeUntilMoveChanged(timePerMove,false);
+        timer->start(10);
+        timePerTurnTimer->start(10);
+        currentGame = Game();
+        return true;
     }
-    else{
-        endGame();
-    }
+    return false;
+
 }
 
-void Moderator::pauseButtonPressed(){
+void Moderator::pauseGame(){
     if(gamestate==PLAYER_1_TO_MOVE){
         gamestate = GAME_PAUSED_PLAYER_1_TO_MOVE;
-        controlPanel->setPauseButton();
     }
     else if(gamestate==PLAYER_2_TO_MOVE){
         gamestate = GAME_PAUSED_PLAYER_2_TO_MOVE;
-        controlPanel->setPauseButton();
     }
-    else if(gamestate==GAME_PAUSED_PLAYER_1_TO_MOVE){
+}
+void Moderator::resumeGame(){
+    if(gamestate==GAME_PAUSED_PLAYER_1_TO_MOVE){
         gamestate = PLAYER_1_TO_MOVE;
-        controlPanel->resetPauseButton();
     }
     else if(gamestate==GAME_PAUSED_PLAYER_2_TO_MOVE){
         gamestate = PLAYER_2_TO_MOVE;
-        controlPanel->resetPauseButton();
     }
-}
-bool Moderator::eventFilter(QObject *obj, QEvent *event){
-       if (event->type() == QEvent::ApplicationDeactivate) {
-           qDebug() << "deactivate";
-
-          // The application deactivation can be handled here
-          return true; // The event is handled
-       }
-       if (event->type() == QEvent::ApplicationActivate) {
-           qDebug() << "activate";
-       gameBoard->activateWindow();
-       controlPanel->activateWindow();
-          // The application activation can be handled here
-          return true;
-       }
-       return QObject::eventFilter(obj, event); // Unhandled events are passed to the base class
-}
-
-bool Moderator::loadPlayer1Program(int boxIndex, QString commandGiven){
-    return loadPlayerProgram(true,boxIndex, commandGiven);
-}
-bool Moderator::loadPlayer2Program(int boxIndex, QString commandGiven){
-    return loadPlayerProgram(false,boxIndex, commandGiven);
 }
 bool Moderator::testProgram(QString progName, QStringList args){
     Player* player = NULL;
@@ -420,20 +356,22 @@ bool Moderator::testProgram(QString progName, QStringList args){
     }
 }
 
-bool Moderator::loadPlayerProgram(bool isPlayer1, int boxIndex, QString commandGiven){
-    QComboBox* playerFileName;
-    QString progName;
-    QStringList args;
+bool Moderator::startProgram(QStringList programName, bool isPlayer1){
+    QString progName = QString("");
+    if(!programName.isEmpty())
+     progName= programName.first();
+    QStringList args = programName;
+    if(!args.isEmpty())
+        args.removeFirst();
     Player* player;
-    bool* playerIsManual;
     if(isPlayer1){
+        player = player1;
         if(player1!=NULL){
             player1->disconnect();
             player1->close();
             delete player1;
             player1 = NULL;
         }
-        playerFileName = controlPanel->player1FileName;
     }
     else{
         player = player2;
@@ -443,24 +381,6 @@ bool Moderator::loadPlayerProgram(bool isPlayer1, int boxIndex, QString commandG
             delete player2;
             player2 = NULL;
         }
-        playerFileName = controlPanel->player2FileName;
-    }
-
-    QString friendlyName = playerFileName->itemText(boxIndex);
-    progName = playerFileName->itemData(playerFileName->currentIndex()).toString();
-    if(friendlyName!="COMMAND")playerFileName->setItemData(playerFileName->findText("COMMAND"),QVariant("COMMAND_MODE"));
-    if(progName=="NONE_SELECTED") return false;
-    if(progName=="") return false;
-    if(progName=="COMMAND_MODE"){
-        bool ok = false;
-        QString text = QInputDialog::getText(this, tr("Advanced program entry"),tr("Enter a command that will run your AI."), QLineEdit::Normal,"", &ok);
-        if(ok&&text!=""){
-            playerFileName->setItemData(playerFileName->currentIndex(),QVariant(text));
-            progName = text.split(' ')[0];
-            args = text.split(' ');
-            args.pop_front();
-        }
-        else return false;
     }
     try{
     player = new Player(isPlayer1,progName,args);
@@ -483,26 +403,17 @@ bool Moderator::loadPlayerProgram(bool isPlayer1, int boxIndex, QString commandG
                 }
             }
             catch(bool){
-            loadFailed(progName);
+            emit loadFailed(progName);
             return false;
             }
         }
         else{
-            playerFileName->setItemData(playerFileName->findText("COMMAND"),QVariant("COMMAND_MODE"));
-            loadFailed(progName);
+            emit loadFailed(progName);
             return false;
         }
     }
-    console("Player " + friendlyName + " ready!");
+    emit loadSuccess(programName);
     return true;
-}
-
-bool Moderator::goPlayer1Program(int boxIndex){
-return loadPlayerProgram(true,boxIndex);
-}
-
-bool Moderator::goPlayer2Program(int boxIndex){
-    return loadPlayerProgram(false,boxIndex);
 }
 
 void Moderator::alert(QString message){
@@ -511,21 +422,15 @@ void Moderator::alert(QString message){
     myBox.exec();
 }
 
-void Moderator::loadFailed(QString player)
-{
-    QMessageBox fail;
-    QString message = "Player " + player + " failed to load!";
-    console(message);
-    fail.setText(message);
-    fail.exec();
-}
+
 
 void Moderator::console(QString message){
-    controlPanel->console(message);
+    qDebug() << message;
+    emit consoleOutput(message);
 }
 
 void Moderator::decrementTimePerTurnTimer(){
-    timeUntilMove-=1;
+    timeUntilMove-=10;
     if((timeUntilMove<=0)||((gamestate==PLAYER_1_TO_MOVE)&&(player1->isManual)
             )||((gamestate==PLAYER_2_TO_MOVE)&&(player2->isManual))){
         lookForMove();
@@ -535,13 +440,20 @@ void Moderator::decrementTimePerTurnTimer(){
 void Moderator::updateTimer()
 {
     if (gamestate==PLAYER_1_TO_MOVE) {
-        controlPanel->player1TimeRemainingBar->setValue(controlPanel->player1TimeRemainingBar->value()-10);
-        if((controlPanel->player1TimeRemainingBar->value()<=0) && (controlPanel->timeLimitPreference->isChecked())) player2Wins();
+        this->timeRemaining-=10;
+        if(timeRemaining<=0) player2Wins();
     } else if (gamestate==PLAYER_2_TO_MOVE) {
-        controlPanel->player2TimeRemainingBar->setValue(controlPanel->player2TimeRemainingBar->value()-10);
-        if((controlPanel->player2TimeRemainingBar->value()<=0) && (controlPanel->timeLimitPreference->isChecked())) player1Wins();
-
-    } else {
-        return;
+        this->timeRemaining-=10;
+        if(timeRemaining<=0) player1Wins();
     }
+}
+int Moderator::getCurrentPlayer(){
+    if(gamestate==PLAYER_1_TO_MOVE)
+        return 1;
+    if(gamestate==PLAYER_2_TO_MOVE)
+        return 2;
+    return 0;
+}
+void Moderator::setTimeUntilMove(int deciseconds){
+    delayBeforeMove = deciseconds*100;
 }

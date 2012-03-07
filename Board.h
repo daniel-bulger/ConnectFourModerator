@@ -7,11 +7,12 @@
 #include <QGraphicsView>
 class Piece;
 class Moderator;
+class ControlPanel;
 class Board : public QGraphicsView
 {
     Q_OBJECT
 public:
-    explicit Board(Moderator *parent = 0);
+    explicit Board(ControlPanel *parent = 0);
     void clearPieces();
     void place(int row, int col);
     void resizeBoard(int width);
@@ -39,8 +40,8 @@ public:
     QPoint lastMousePos;
     bool isMoving;
     bool isResizing;
-    Moderator* parent;
-
+    ControlPanel* parent;
+    Moderator* moderator;
     int currentPlayer;
     int playerGoesFirst;
     QPixmap* boardImage;

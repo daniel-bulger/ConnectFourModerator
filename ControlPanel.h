@@ -12,7 +12,7 @@ class ControlPanel : public QWidget
     Q_OBJECT
 
 public:
-    ControlPanel(Moderator* parent = 0);
+    ControlPanel();
     ~ControlPanel();
     void closeEvent(QCloseEvent *event);
     void showEvent(QShowEvent* event);
@@ -55,11 +55,13 @@ public:
     QPushButton* chooseDirectoryButton;
     QLineEdit* chooseDirectoryText;
     QMenuBar* menuBar;
+    QString* AIFolder;
 
     QMenu* fileMenu;
     QMenu* helpMenu;
     QMenu* preferencesMenu;
     QMenu* boardSizeSubmenu;
+    QMenu* trainerMenu;
     QActionGroup* boardSizeChoices;
     QAction* boardBackgroundPreference;
     QAction* boardLockedPreference;
@@ -85,9 +87,6 @@ public:
     bool player2Move(int);
     void lookForMove();
     void alert(QString message);
-    void loadFailed(QString player);
-    void console(QString message);
-    void endGame();
     void resetGoButton();
     void setGoButton();
     void resetPauseButton();
@@ -97,8 +96,16 @@ public:
     void player1Wins();
     void player2Wins();
     void showHTML(QString data);
+    QStringList getFileNameFromPlayerSelector(bool isPlayer1);
     static const int MOVE_TIME_LIMIT = 10;
  public slots:
+    void connectManualInputToModerator();
+    void gameHasEnded();
+    void loadFailed(QString player);
+    void displayWinner(int winner);
+    void console(QString message);
+    void chooseAIsToTrain();
+    void runMassTrials();
     void chooseBoardColors();
     void player1Debug();
     void player2Debug();
@@ -112,6 +119,14 @@ public:
     void boardSmallChanged(bool isChecked, bool recur = true);
     void boardMediumChanged(bool isChecked, bool recur = true);
     void boardLargeChanged(bool isChecked,bool recur = true);
+    void updateTimeRemainingSlider(int timeRemaining, bool isPlayer1);
+    void updateCurrentPlayerTimeRemainingSlider();
+    void placePieceOnBoard(int x, int y);
+    void playerToMoveBoardUpdater(bool isManual);
+    void goButtonPressed();
+    void pauseButtonPressed();
+    void chooseDirectory();
+    void showSuccessfulLoad(QStringList);
 
 };
 

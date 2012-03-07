@@ -4,37 +4,40 @@
 #include "Game.h"
 #include "Board.h"
 #include "Player.h"
+#include "Trainer.h"
 #include <QtGui>
 #include <QtCore>
 class Board;
+class Trainer;
 class ControlPanel; // forward declaration
 class Moderator : public QMainWindow
 {
     Q_OBJECT
 
 public:
+    int getCurrentPlayer();
     Moderator(QWidget *parent = 0);
     ~Moderator();
     ControlPanel* controlPanel;
-    Board* gameBoard;
     Game currentGame;
     enum gamestates{GAME_STOPPED,PLAYER_1_TO_MOVE,PLAYER_2_TO_MOVE,PLAYER_1_QUESTION_MARK,PLAYER_2_QUESTION_MARK,GAME_PAUSED_PLAYER_1_TO_MOVE,GAME_PAUSED_PLAYER_2_TO_MOVE};
     int gamestate;
-    QString* AIFolder;
     int plyr1Move;
     int plyr2Move;
     int timeUntilMove;
+    int timePerMove;
     Player* player1;
     Player* player2;
     bool player1GoesFirst;
     bool player1MadeAMove;
     bool player2MadeAMove;
-    QSettings* settings;
+    Trainer* trainer;
+    QTimer* timer;
+    QTimer* timePerTurnTimer;
+    QString logFilePath;
     bool playerMove(bool,int);
-    bool eventFilter(QObject *, QEvent *);
     void lookForMove();
     void alert(QString message);
-    void loadFailed(QString player);
     void console(QString message);
     void endGame();
     void resetGoButton();
@@ -44,9 +47,21 @@ public:
     bool testProgram(QString progName, QStringList args = QStringList());
 
     static const int MOVE_TIME_LIMIT = 10;
-
- public slots:
-    void chooseDirectory();
+private:
+    int timeRemaining;
+    int delayBeforeMove;
+signals:
+    void timeUntilMoveChanged(int timeRemaining, bool isPlayer1);
+    void consoleOutput(QString message);
+    void gameOver(int winner);
+    void piecePlaced(int x, int y);
+    void player2ToMove(bool isManual);
+    void player1ToMove(bool isManual);
+    void loadFailed(QString player);
+    void gameHasEnded();
+    void loadSuccess(QStringList programName);
+    void acceptManualInput();
+public slots:
     void directoryTextBoxEdited();
     void decrementTimePerTurnTimer();
     void updateTimer();
@@ -55,13 +70,11 @@ public:
     void player2HasMoved();
     void player1DroppedPiece(int col);
     void player2DroppedPiece(int col);
-    void pauseButtonPressed();
-    void goButtonPressed();
-    bool loadPlayer1Program(int index, QString commandGiven = "");
-    bool loadPlayer2Program(int index, QString commandGiven = "");
-    bool loadPlayerProgram(bool isPlayer1, int index, QString commandGiven = "");
-    bool goPlayer1Program(int index);
-    bool goPlayer2Program(int index);
+    void pauseGame();
+    void resumeGame();
+    bool startGame(QStringList player1FileName, QStringList player2FileName, QString logFolder);
+    void setTimeUntilMove(int msecs);
+    bool startProgram(QStringList programName, bool isPlayer1);
 };
 
 #endif

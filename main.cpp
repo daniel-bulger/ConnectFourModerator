@@ -5,7 +5,9 @@
 int main(int argc, char *argv[])
 {
     QApplication connectFour(argc, argv);
-    Moderator moderator;
-    connectFour.installEventFilter(&moderator);
+    ControlPanel controlPanel;
+    controlPanel.parent->controlPanel=&controlPanel;
+    connectFour.installEventFilter(&controlPanel);
     return connectFour.exec();
+
 }

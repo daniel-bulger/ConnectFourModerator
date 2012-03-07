@@ -2,9 +2,10 @@
 #include "Moderator.h"
 #include <QtGui>
 
-Board::Board(Moderator *parent) :parent(parent),
+Board::Board(ControlPanel *parent) :parent(parent),
     QGraphicsView()
 {
+    moderator = parent->parent;
     this->setRenderHint(QPainter::SmoothPixmapTransform);
     isResizing = false;
     isMoving = false;
@@ -153,6 +154,7 @@ void Board::gameResult(int player)
 {
     if (player==1) gameResultText->setText("PLAYER 1\n    WINS");
     if (player==2) gameResultText->setText("PLAYER 2\n    WINS");
+    if (player==3) gameResultText->setText("   GAME\nSTOPPED");
     if (!player) gameResultText->setText("TIE");
 
     gameResultText->setPos(originalWidth/2-gameResultText->boundingRect().width()/2, (originalHeight/2)-gameResultText->boundingRect().height()/2);
@@ -179,8 +181,8 @@ void Board::mouseMoveEvent(QMouseEvent *event)
     else{
         x = round(float(event->x())/float(this->width())*(float)this->originalWidth);
     }
-    if((parent->gamestate==parent->PLAYER_1_TO_MOVE && parent->player1->isManual)||
-            (parent->gamestate==parent->PLAYER_2_TO_MOVE && parent->player2->isManual)){
+    if((parent->parent->gamestate==parent->PLAYER_1_TO_MOVE && parent->parent->player1->isManual)||
+            (parent->parent->gamestate==parent->parent->PLAYER_2_TO_MOVE && parent->parent->player2->isManual)){
         int col = ceil((x+OFFSET_LEFT()-H_SPACING())/(COL_WIDTH()+H_SPACING()));
         if(col>7)
             col = 7;
@@ -206,10 +208,10 @@ bool Board::eventFilter(QObject *object, QEvent *event)
  }
 void Board::hoverEnterEvent(QEvent *event)
 {
-    if(parent->gamestate==parent->PLAYER_1_TO_MOVE && parent->player1->isManual){
+    if(parent->parent->gamestate==parent->PLAYER_1_TO_MOVE && parent->parent->player1->isManual){
         highlightGraphic->show();
     }
-    else if(parent->gamestate==parent->PLAYER_2_TO_MOVE && parent->player2->isManual){
+    else if(parent->parent->gamestate==parent->PLAYER_2_TO_MOVE && parent->parent->player2->isManual){
         highlightGraphic->show();
     }
 }
@@ -222,7 +224,7 @@ void Board::mouseDoubleClickEvent(QMouseEvent *event){
     int col = ceil((event->x()+OFFSET_LEFT()-H_SPACING())/(COL_WIDTH()+H_SPACING()));
     if(col>7)
         col = 7;
-    if(parent->controlPanel->doubleClickToPlacePiecePreference->isChecked())
+    if(parent->parent->controlPanel->doubleClickToPlacePiecePreference->isChecked())
         placePieceIfManual(col);
 }
 
@@ -234,7 +236,7 @@ void Board::mousePressEvent(QMouseEvent *event){
         isResizing = true;
     }
     else {
-        if((event->button() == Qt::LeftButton)&&(!parent->controlPanel->boardLockedPreference->isChecked()))
+        if((event->button() == Qt::LeftButton)&&(!parent->boardLockedPreference->isChecked()))
         {
             lastMousePos = event->globalPos();
             isMoving = true;
@@ -243,19 +245,19 @@ void Board::mousePressEvent(QMouseEvent *event){
         int col = ceil((round(float(event->x())/float(this->width())*(float)this->originalWidth)+OFFSET_LEFT()-H_SPACING())/(COL_WIDTH()+H_SPACING()));
         if(col>7)
             col = 7;
-        if(!parent->controlPanel->doubleClickToPlacePiecePreference->isChecked())
+        if(!parent->doubleClickToPlacePiecePreference->isChecked())
             placePieceIfManual(col);
     }
 
 }
 void Board::placePieceIfManual(int col){
-    if(parent->gamestate==parent->PLAYER_1_TO_MOVE && parent->player1->isManual){
-        parent->plyr1Move = col;
-        parent->player1MadeAMove = true;
+    if(parent->parent->gamestate==parent->parent->PLAYER_1_TO_MOVE && parent->parent->player1->isManual){
+        moderator->plyr1Move = col;
+        moderator->player1MadeAMove = true;
     }
-    else if(parent->gamestate==parent->PLAYER_2_TO_MOVE && parent->player2->isManual){
-        parent->plyr2Move = col;
-        parent->player2MadeAMove = true;
+    else if(parent->parent->gamestate==parent->parent->PLAYER_2_TO_MOVE && parent->parent->player2->isManual){
+        moderator->plyr2Move = col;
+        moderator->player2MadeAMove = true;
     }
 }
 
