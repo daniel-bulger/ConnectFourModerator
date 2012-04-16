@@ -166,15 +166,11 @@ ControlPanel::ControlPanel()
     setLayout(layout);
     moveToStartingLocation();
 
-    connect(go, SIGNAL(clicked()), this, SLOT(goButtonPressed()));
-    connect(pause, SIGNAL(clicked()), this, SLOT(pauseButtonPressed()));
-    connect(parent,SIGNAL(gameOver(int)),this,SLOT(displayWinner(int)));
-    connect(chooseDirectoryText,SIGNAL(textEdited()),parent,SLOT(directoryTextBoxEdited()));
-    connect(chooseDirectoryButton,SIGNAL(clicked()),parent,SLOT(chooseDirectory()));
-    connect(player1FileName, SIGNAL(currentIndexChanged(int)), parent, SLOT(loadPlayer1Program(int)));
-    connect(player2FileName, SIGNAL(currentIndexChanged(int)), parent, SLOT(loadPlayer2Program(int)));
-    connect(timePerTurnTimer,SIGNAL(timeout()),parent,SLOT(decrementTimePerTurnTimer()));
-    connect(timer, SIGNAL(timeout()), parent, SLOT(updateTimer()));
+    connect(go, SIGNAL(clicked()), this, SLOT(goButtonPressed()),Qt::QueuedConnection);
+    connect(pause, SIGNAL(clicked()), this, SLOT(pauseButtonPressed()),Qt::QueuedConnection);
+    connect(parent,SIGNAL(gameOver(int)),this,SLOT(displayWinner(int)),Qt::QueuedConnection);
+    connect(chooseDirectoryText,SIGNAL(textEdited()),this,SLOT(directoryTextBoxEdited()),Qt::QueuedConnection);
+    connect(chooseDirectoryButton,SIGNAL(clicked()),this,SLOT(chooseDirectory()),Qt::QueuedConnection);
     connect(parent,SIGNAL(timeUntilMoveChanged(int,bool)),this,SLOT(updateTimeRemainingSlider(int,bool)));
     connect(parent->timer,SIGNAL(timeout()),this,SLOT(updateCurrentPlayerTimeRemainingSlider()));
     connect(parent,SIGNAL(consoleOutput(QString)),this,SLOT(console(QString)));
@@ -306,6 +302,7 @@ void ControlPanel::player2Debug(){
     }
 }
 void ControlPanel::goButtonPressed(){
+    go->setEnabled(false);
     if(parent->gamestate==GAME_STOPPED){
         if(parent->startGame(getFileNameFromPlayerSelector(true),getFileNameFromPlayerSelector(false),*AIFolder)){
             setGoButton();
@@ -329,6 +326,8 @@ void ControlPanel::goButtonPressed(){
         player2TimeRemainingBar->setValue(MOVE_TIME_LIMIT*1000);
         resetGoButton();
     }
+    go->setEnabled(true);
+
 }
 void ControlPanel::pauseButtonPressed(){
     if(pause->text()==PAUSE_BUTTON_PAUSE_TEXT){
@@ -336,12 +335,13 @@ void ControlPanel::pauseButtonPressed(){
         this->setPauseButton();
         parent->pauseGame();
     }
-    else{if(pause->text()==PAUSE_BUTTON_RESUME_TEXT){
-        qDebug() << "Resume button pressed" << endl;
-
-        this->resetPauseButton();
-        parent->resumeGame();
-    }}
+    else{
+        if(pause->text()==PAUSE_BUTTON_RESUME_TEXT){
+            qDebug() << "Resume button pressed" << endl;
+            this->resetPauseButton();
+            parent->resumeGame();
+        }
+    }
 }
 void ControlPanel::gameHasEnded(){
     timePerTurnTimer->stop();
@@ -414,10 +414,11 @@ void ControlPanel::boardBackChanged(bool isChecked){
     }
 }
 void ControlPanel::runMassTrials(){
+    trainers.push_back(new Trainer(this,true));
 
 }
 void ControlPanel::chooseAIsToTrain(){
-
+    trainers.push_back(new Trainer(this,false));
 }
 
 void ControlPanel::boardAutoChanged(bool isChecked,bool recur){
@@ -506,10 +507,17 @@ void ControlPanel::updateTimeRemainingSlider(int timeRemaining, bool isPlayer1){
 }
 void ControlPanel::updateCurrentPlayerTimeRemainingSlider(){
     int currentPlayer = parent->getCurrentPlayer();
-    if(currentPlayer==1)
+    if(currentPlayer==1){
         this->player1TimeRemainingBar->setValue(player1TimeRemainingBar->value()-10);
-    if(currentPlayer==2)
+        if((this->player1TimeRemainingBar->value()<=0)&&(timeLimitPreference))
+            parent->player2Wins();
+    }
+    if(currentPlayer==2){
         this->player2TimeRemainingBar->setValue(player2TimeRemainingBar->value()-10);
+        if((this->player2TimeRemainingBar->value()<=0)&&(timeLimitPreference))
+            parent->player1Wins();
+
+    }
 }
 void ControlPanel::displayWinner(int winner){
     gameBoard->gameResult(winner);
@@ -569,7 +577,6 @@ QStringList ControlPanel::getFileNameFromPlayerSelector(bool isPlayer1){
     }
     QStringList retVal = QStringList(progName);
     retVal.append(args);
-    qDebug() << retVal;
     return retVal;
 }
 void ControlPanel::showSuccessfulLoad(QStringList fullProgName){

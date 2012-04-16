@@ -14,14 +14,14 @@ Player::Player(bool isPlayer1,QString progName, QStringList args):progName(progN
         if(isPlayer1){
             // TODO figure out where to put these
             QString fileName = "./player1";
-            fileName+=QString().setNum(this->getNextId());
+            fileName+=QString().setNum(this->getNextId()+QDateTime::currentMSecsSinceEpoch());
             fileName+=".txt";
             file = new QFile(fileName);
             this->setStandardOutputFile(fileName,QIODevice::Truncate);
         }
         else{
             QString fileName = "./player2";
-            fileName+=QString().setNum(this->getNextId());
+            fileName+=QString().setNum(this->getNextId()+QDateTime::currentMSecsSinceEpoch());
             fileName+=".txt";
             file = new QFile(fileName);
             this->setStandardOutputFile(fileName,QIODevice::Truncate);
@@ -54,11 +54,9 @@ void Player::parsePath(){
 #endif
 }
 void Player::sleep(int mSecs){
-    qDebug() << "SLEEP";
     QTime dieTime = QTime::currentTime().addMSecs(mSecs);
     while( QTime::currentTime() < dieTime )
             QCoreApplication::processEvents(QEventLoop::AllEvents, mSecs);
-    qDebug()<< "DONE";
 }
 
 bool Player::getQuestionMark(){
@@ -76,15 +74,12 @@ QString Player::readNewInput(){
         qDebug("Failed to open file");
     }
     QString newInput = QString(file->readAll());
-    qDebug() << newInput;
     int oldLen = oldOutput.length();
     oldOutput = newInput;
     if(newInput.endsWith("\n")){
         newInput.chop(2);
     }
     QString ret = newInput.remove(0,oldLen);
-    qDebug() << (ret=="p");
-    qDebug() << ret;
     file->close();
     return ret;
 

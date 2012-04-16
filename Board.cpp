@@ -152,6 +152,8 @@ void Board::clearPieces()
 
 void Board::gameResult(int player)
 {
+    if (player==-1) gameResultText->setText("PLAYER 1\n  ERROR");
+    if (player==-2) gameResultText->setText("PLAYER 2\n  ERROR");
     if (player==1) gameResultText->setText("PLAYER 1\n    WINS");
     if (player==2) gameResultText->setText("PLAYER 2\n    WINS");
     if (player==3) gameResultText->setText("   GAME\nSTOPPED");

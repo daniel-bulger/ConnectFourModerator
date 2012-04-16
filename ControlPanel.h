@@ -3,10 +3,12 @@
 #include "Game.h"
 #include "Board.h"
 #include "Moderator.h"
+#include "Trainer.h"
 #include <QtGui>
 #include <QtCore>
 #include <QMainWindow>
 class Moderator;  // forward declaration
+class Trainer;
 class ControlPanel : public QWidget
 {
     Q_OBJECT
@@ -56,7 +58,7 @@ public:
     QLineEdit* chooseDirectoryText;
     QMenuBar* menuBar;
     QString* AIFolder;
-
+    QVector<Trainer*> trainers;
     QMenu* fileMenu;
     QMenu* helpMenu;
     QMenu* preferencesMenu;
@@ -83,6 +85,7 @@ public:
     QStringList player2ProgramArgs;
     bool player1IsManual;
     bool player2IsManual;
+    bool startingGame;
     bool player1Move(int);
     bool player2Move(int);
     void lookForMove();

@@ -21,6 +21,7 @@ Moderator::~Moderator()
 
 }
 
+
 void Moderator::directoryTextBoxEdited(){
 
 }
@@ -30,17 +31,16 @@ bool Moderator::playerMove(bool isPlayer1,int input){
     if(playerOutput.first==-1){
         if(isPlayer1){
             if(player1->isManual) return false;
-            console("Player 1 placed a piece in an invalid location.");
-            player2Wins();
+            console("Player 1 placed a piece in an invalid location. ("+QString().setNum(input)+")");
+            player2Wins(true);
         }
         else{
             if(player2->isManual) return false;
-            console("Player 2 placed a piece in an invalid location.");
-            player1Wins();
+            console("Player 2 placed a piece in an invalid location. ("+QString().setNum(input)+")");
+            player1Wins(true);
         }
         return false;
     }
-    qDebug() << "HELLO THERE" << endl;
     emit(piecePlaced(playerOutput.second.first,playerOutput.second.second));
 
     if(playerOutput.first==-2){
@@ -70,7 +70,6 @@ void Moderator::lookForMove(){
 
         QString moveChars = QString().setNum(move);
         moveChars.append("\n");
-        qDebug() << moveChars;
         player1MadeAMove = false;
 
         if(playerMove(true,move)==false){
@@ -80,7 +79,6 @@ void Moderator::lookForMove(){
         if(!player2->isManual){
             player2->write(moveChars.toStdString().c_str());
             player2->waitForBytesWritten();
-            qDebug() << "DOME" ;
         }
         gamestate = PLAYER_2_TO_MOVE;
         emit(player2ToMove(player2->isManual));
@@ -121,6 +119,8 @@ void Moderator::playerHasMoved(bool isPlayer1){
     Player* player;
     if(isPlayer1) player = player1;
     else player = player2;
+    if(!player)
+        return;
     if(gamestate!=GAME_STOPPED){
         QString input = QString(player->readNewInput());
         if(input=="")
@@ -129,16 +129,10 @@ void Moderator::playerHasMoved(bool isPlayer1){
             player1MadeAMove = true;
         else
             player2MadeAMove = true;
-        if(QString(input).toInt()<=0||QString(input).toInt()>7){
-            if(isPlayer1)
-                player2Wins();
-            else
-                player1Wins();
-        }
         if(isPlayer1)
-        plyr1Move = QString(input).toInt();
+            plyr1Move = QString(input).toInt();
         else
-        plyr2Move = QString(input).toInt();
+            plyr2Move = QString(input).toInt();
     }
 }
 
@@ -162,26 +156,33 @@ void Moderator::player2DroppedPiece(int col){
 }
 
 void Moderator::player1Wins(bool dueToError){
-    emit gameOver(1);
+
     console("PLAYER 1 WINS");
     if(dueToError){
-        player1->write("0\n");
-        player2->write("0\n");
+        emit gameOver(-2);
+        if(player1)
+            player1->write("0\n");
+        if(player2)
+            player2->write("0\n");
     }
     else{
+        emit gameOver(1);
         player1->write("-1\n");
         player2->write("-1\n");
     }
     endGame();
 }
 void Moderator::player2Wins(bool dueToError){
-    emit gameOver(2);
     console("PLAYER 2 WINS");
     if(dueToError){
-        player1->write("0\n");
-        player2->write("0\n");
+        emit gameOver(-1);
+        if(player1)
+            player1->write("0\n");
+        if(player2)
+            player2->write("0\n");
     }
     else{
+        emit gameOver(2);
         player1->write("-2\n");
         player2->write("-2\n");
     }
@@ -196,11 +197,11 @@ void Moderator::tieGame(){
 }
 
 void Moderator::endGame(){
-    if(!player1->isManual){
+    if(player1&&!player1->isManual){
         player1->disconnect();
         player1->close();
     }
-    if(!player2->isManual){
+    if(player2&&!player2->isManual){
         player2->disconnect();
         player2->close();
     }
@@ -209,16 +210,16 @@ void Moderator::endGame(){
         moveString +="\n";
         QString filePath = logFilePath;
         filePath+= "/log.txt";
-        qDebug() <<filePath;
         QFile file(filePath);
         file.open(QIODevice::WriteOnly | QIODevice::Append);
         file.write(QByteArray(moveString.toStdString().c_str()));
         file.close();
     }
-
-    delete player1;
+    if(player1)
+        player1->deleteLater();
     player1 = NULL;
-    delete player2;
+    if(player2)
+        player2->deleteLater();
     player2 = NULL;
     gamestate = GAME_STOPPED;
     emit gameHasEnded();
@@ -226,7 +227,8 @@ void Moderator::endGame(){
 bool Moderator::startGame(QStringList player1FileName, QStringList player2FileName, QString logFolder){
     logFilePath = logFolder;
     if(startProgram(player1FileName,true)&&startProgram(player2FileName,false)){
-
+        if(!player1||!player2)
+            return false;
         if (player1GoesFirst) {
             player1GoesFirst = false;
             if(!player1->isManual){
@@ -263,7 +265,7 @@ bool Moderator::startGame(QStringList player1FileName, QStringList player2FileNa
             }
             else{
                 console("Player 1 failed to output a '?', so player 2 wins.");
-                player2Wins();
+                player2Wins(true);
                 emit loadFailed(player1FileName.join(" "));
                 return false;
             }
@@ -275,14 +277,17 @@ bool Moderator::startGame(QStringList player1FileName, QStringList player2FileNa
             }
             else{
                 console("Player 2 failed to output a '?', so player 1 wins.");
-                player1Wins();
+                player1Wins(true);
                 emit loadFailed(player2FileName.join(" "));
                 return false;
             }
 
         }
+
         player1MadeAMove = false;
         player2MadeAMove = false;
+        if(!player1||!player2)
+            return false;
         if(!player1->isManual){
             connect(player1,SIGNAL(readyReadStandardError()),this,SLOT(player1Debug()));
         }
@@ -347,11 +352,11 @@ bool Moderator::testProgram(QString progName, QStringList args){
     }
     player->write("2\n");
     if(player->getQuestionMark()){
-        delete player;
+        player->deleteLater();
         return true;
     }
     else{
-        delete player;
+        player->deleteLater();
         return false;
     }
 }
@@ -369,7 +374,7 @@ bool Moderator::startProgram(QStringList programName, bool isPlayer1){
         if(player1!=NULL){
             player1->disconnect();
             player1->close();
-            delete player1;
+            player1->deleteLater();
             player1 = NULL;
         }
     }
@@ -378,18 +383,18 @@ bool Moderator::startProgram(QStringList programName, bool isPlayer1){
         if(player2!=NULL){
             player2->disconnect();
             player2->close();
-            delete player2;
+            player2->deleteLater();
             player2 = NULL;
         }
     }
     try{
-    player = new Player(isPlayer1,progName,args);
-    if(isPlayer1){
-        player1 = player;
-    }
-    else{
-        player2 = player;
-    }
+        player = new Player(isPlayer1,progName,args);
+        if(isPlayer1){
+            player1 = player;
+        }
+        else{
+            player2 = player;
+        }
     }
     catch(bool){
         if(progName.endsWith(".exe")){
@@ -425,13 +430,13 @@ void Moderator::alert(QString message){
 
 
 void Moderator::console(QString message){
-    qDebug() << message;
     emit consoleOutput(message);
 }
-
 void Moderator::decrementTimePerTurnTimer(){
     timeUntilMove-=10;
-    if((timeUntilMove<=0)||((gamestate==PLAYER_1_TO_MOVE)&&(player1->isManual)
+    if(!player1||!player2)
+        return;
+    if(((timeUntilMove<=0))||((gamestate==PLAYER_1_TO_MOVE)&&(player1->isManual)
             )||((gamestate==PLAYER_2_TO_MOVE)&&(player2->isManual))){
         lookForMove();
     }
