@@ -13,6 +13,7 @@ ControlPanel::ControlPanel()
     menuBar = new QMenuBar(this);
     fileMenu = menuBar->addMenu("File");
     fileMenu->addAction("Change AI dir",parent,SLOT(chooseDirectory()));
+    fileMenu->addAction("New Tournament",parent,SLOT(startTournament()));
     fileMenu->addSeparator();
     fileMenu->addAction("Exit",this,SLOT(close()));
     preferencesMenu = menuBar->addMenu("Preferences");
@@ -615,4 +616,16 @@ void ControlPanel::showSuccessfulLoad(QStringList fullProgName){
 }
 void ControlPanel::connectManualInputToModerator(){
     connect(gameBoard,SIGNAL(pieceDroppedByPlayer(int)),this->parent,SLOT(playerDroppedPiece(int)));
+}
+
+void ControlPanel::initTournament()
+{
+    Trainer* trainer = new Trainer(this, 2);
+    trainer->connect(trainer, SIGNAL(finished(players_results_t)), SLOT(startTournament(players_results_t)));
+}
+
+void ControlPanel::startTournament(Tournament::players_results_t results)
+{
+    this->tournament = new Tournament(results);
+    tournament->printTree();
 }

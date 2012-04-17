@@ -1,6 +1,9 @@
 #include "Player.h"
 int Player::nextId = 0;
 
+Player::Player() {}
+Player::Player(const Player&) {}
+
 Player::Player(bool isPlayer1,QString progName, QStringList args):progName(progName),args(args)
 {
 

@@ -3,10 +3,14 @@
 #include "Game.h"
 #include "Board.h"
 #include "Moderator.h"
+#include "Tournament.h"
 #include "Trainer.h"
+#include "Player.h"
 #include <QtGui>
 #include <QtCore>
 #include <QMainWindow>
+#include <algorithm>
+#include <cmath>
 class Moderator;  // forward declaration
 class Trainer;
 class ControlPanel : public QWidget
@@ -104,6 +108,8 @@ public:
     void showHTML(QString data);
     QStringList getFileNameFromPlayerSelector(bool isPlayer1);
     static const int MOVE_TIME_LIMIT = 10;
+    Tournament* tournament;
+
  public slots:
     void onApplicationFocusChanged(QWidget*, QWidget*);
     void connectManualInputToModerator();
@@ -134,6 +140,8 @@ public:
     void pauseButtonPressed();
     void chooseDirectory();
     void showSuccessfulLoad(QStringList);
+    void initTournament();
+    void startTournament(Tournament::players_results_t results);
 
 };
 

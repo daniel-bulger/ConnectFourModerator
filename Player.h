@@ -12,6 +12,8 @@ public:
     QFile* file;
     QString progName;
     QStringList args;
+    Player();
+    Player(const Player&);
     Player(bool isPlayer1,QString progName, QStringList args = QStringList());
     void startManual();
     bool getQuestionMark();
