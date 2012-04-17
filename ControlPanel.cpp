@@ -183,6 +183,8 @@ ControlPanel::ControlPanel()
     connect(this->timePerTurnSlider,SIGNAL(valueChanged(int)),parent,SLOT(setTimeUntilMove(int)));
     connect(parent,SIGNAL(acceptManualInput()),this,SLOT(connectManualInputToModerator()));
     parent->setTimeUntilMove(timePerTurnSlider->value());
+    connect(qApp, SIGNAL(focusChanged(QWidget*,QWidget*)),
+      this, SLOT(onApplicationFocusChanged(QWidget*,QWidget*)));
 
     this->show();
     QtConcurrent::run(this, &ControlPanel::populateComboBoxes);
@@ -206,17 +208,45 @@ void ControlPanel::closeEvent(QCloseEvent *event){
     if(boardMedium->isChecked()) settings->setValue("boardsize",2);
     if(boardLarge->isChecked()) settings->setValue("boardsize",3);
     if(boardAuto->isChecked()) settings->setValue("boardsize",0);
-
-
-
     QApplication::quit();
 }
 void ControlPanel::showEvent(QShowEvent*){
-    qDebug("SHOWING CONTROLPANEL");
     if((gameBoard)!=NULL){
         gameBoard->setWindowState(Qt::WindowActive);
     }
 }
+void ControlPanel::focusInEvent(QFocusEvent *){
+    qDebug("Focus in");
+    if((gameBoard)!=NULL){
+        gameBoard->setWindowState(Qt::WindowActive);
+    }
+}
+void ControlPanel::focusOutEvent(QFocusEvent *){
+    qDebug("Focus out");
+    if((gameBoard)!=NULL){
+        gameBoard->setWindowState(Qt::WindowMinimized);
+    }
+}
+void ControlPanel::mousePressEvent(QMouseEvent *){
+    qDebug("Click");
+    if((gameBoard)!=NULL){
+        gameBoard->setWindowState(Qt::WindowActive);
+    }
+}
+
+void ControlPanel::onApplicationFocusChanged(QWidget* from, QWidget* to){
+    if (from == 0 && isAncestorOf(to) == true){
+        if((gameBoard)!=NULL){
+            gameBoard->setWindowState(Qt::WindowActive);
+        }
+    }
+    else if (isAncestorOf(from) == true && to == 0){
+        if((gameBoard)!=NULL){
+            gameBoard->setWindowState(Qt::WindowMinimized);
+        }
+    }
+}
+
 void ControlPanel::chooseBoardColors(){
     QColor col;
     col.setRed(boardRed);

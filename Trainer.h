@@ -20,6 +20,7 @@ public:
 private:
     enum gamestates{GAME_STOPPED,PLAYER_1_TO_MOVE,PLAYER_2_TO_MOVE,PLAYER_1_QUESTION_MARK,PLAYER_2_QUESTION_MARK,GAME_PAUSED_PLAYER_1_TO_MOVE,GAME_PAUSED_PLAYER_2_TO_MOVE};
     Moderator* testerModerator;
+    Moderator* trainerModerator;
     QSettings* settings;
     ControlPanel* parent;
     QSlider* timePerTurnSlider;
@@ -44,6 +45,7 @@ private:
     Player* player2;
     QProgressBar* percentStarted;
     QProgressBar* percentFinished;
+    bool switchSides;
     int player1PullIndex;
     int player2PullIndex;
     int gamesRemainingToBeStarted;

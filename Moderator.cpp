@@ -289,13 +289,13 @@ bool Moderator::startGame(QStringList player1FileName, QStringList player2FileNa
         if(!player1||!player2)
             return false;
         if(!player1->isManual){
-            connect(player1,SIGNAL(readyReadStandardError()),this,SLOT(player1Debug()));
+            //connect(player1,SIGNAL(readyReadStandardError()),this,SLOT(player1Debug()));
         }
         else{
             emit acceptManualInput();
         }
         if(!player2->isManual){
-            connect(player2,SIGNAL(readyReadStandardError()),this,SLOT(player2Debug()));
+            //connect(player2,SIGNAL(readyReadStandardError()),this,SLOT(player2Debug()));
         }
         else{
             emit acceptManualInput();

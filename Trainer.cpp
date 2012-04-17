@@ -8,6 +8,8 @@ Trainer::Trainer(ControlPanel *parent, bool simple) :parent(parent),
     QWidget(0)
 {
     testerModerator = new Moderator;
+    trainerModerator = new Moderator;
+    connect(trainerModerator,SIGNAL(gameHasEnded()),this,SLOT(gameHasEnded()),Qt::QueuedConnection);
     numberOfCores = QThread::idealThreadCount();
     if(numberOfCores==-1)
         numberOfCores=1;
@@ -21,20 +23,8 @@ Trainer::Trainer(ControlPanel *parent, bool simple) :parent(parent),
     timePerTurnSlider->setTickPosition(QSlider::TicksBelow);
     timePerTurnSlider->setTickInterval(10);
     timePerTurnSlider->setSingleStep(5);
+    connect(timePerTurnSlider,SIGNAL(valueChanged(int)),trainerModerator,SLOT(setTimeUntilMove(int)));
     lastPlayers =QVector<QPair<int,int> >();
-    trainerModerators =QVector<Moderator*>();
-    moderatorThreads = QVector<QThread*>();
-    for(int i = 0; i<numberOfCores;i++){
-        lastPlayers.push_back(qMakePair(0,0));
-        Moderator* worker = new Moderator;
-        moderatorThreads.push_back(new QThread());
-        trainerModerators.push_back(worker);
-        worker->moveToThread(moderatorThreads[i]);
-        connect(this->timePerTurnSlider,SIGNAL(valueChanged(int)),trainerModerators[i],SLOT(setTimeUntilMove(int)),Qt::QueuedConnection);
-        trainerModerators[i]->setTimeUntilMove(timePerTurnSlider->value());
-
-    }
-
     player1PullIndex = 0;
     player2PullIndex = 0;
     percentStarted = new QProgressBar();
@@ -65,11 +55,23 @@ Trainer::Trainer(ControlPanel *parent, bool simple) :parent(parent),
     playerFileNames = new QVector<QComboBox*>();
     playerFileNames->push_back(new QComboBox());
     playerFileNames->push_back(new QComboBox());
+
     addPlayer = new QPushButton("Add player");
     removePlayer = new QPushButton("Remove player");
     fewestGamesPerCombinationLabel = new QLabel("Number of games to be played between each pair:");
     fewestGamesPerCombinationSpinBox = new QSpinBox();
     simpleLayout = new QVBoxLayout();
+    advancedLayout = new QVBoxLayout();
+    advancedLayout->addWidget(playerFileNames->at(0));
+    advancedLayout->addWidget(playerFileNames->at(1));
+    advancedLayout->addWidget(chooseDirectoryButton);
+    advancedLayout->addWidget(numTrialsLabel);
+    advancedLayout->addWidget(numTrialsInput);
+    advancedLayout->addWidget(percentStarted);
+    advancedLayout->addWidget(percentFinished);
+    advancedLayout->addWidget(timePerTurnSlider);
+    advancedLayout->addWidget(goButton);
+    advancedLayout->addWidget(pauseButton);
     simpleLayout->addWidget(playerFileNames->at(0));
     simpleLayout->addWidget(playerFileNames->at(1));
     simpleLayout->addWidget(chooseDirectoryButton);
@@ -82,7 +84,12 @@ Trainer::Trainer(ControlPanel *parent, bool simple) :parent(parent),
     simpleLayout->addWidget(pauseButton);
     connect(goButton, SIGNAL(clicked()), this, SLOT(goButtonPressed()));
     connect(chooseDirectoryButton,SIGNAL(clicked()),this,SLOT(chooseDirectory()));
-    this->setLayout(simpleLayout);
+    if(simple==true){
+        this->setLayout(simpleLayout);
+    }
+    else{
+        this->setLayout(advancedLayout);
+    }
     this->show();
     QtConcurrent::run(this, &Trainer::populateComboBoxes);
 
@@ -120,40 +127,25 @@ void Trainer::resume(){
 }
 void Trainer::start(int recursion){
     if(recursion>5){
-        qDebug() << "IT WONT START!!!";
+        stop();
         return;
     }
     int index = 0;
     if(gamesRemainingToBeStarted<=0)
         return;
-    while(index<trainerModerators.size()&&trainerModerators[index]->gamestate!=GAME_STOPPED){
-        index++;
-    }
-    if(index>=trainerModerators.size()){
-        gamesRemainingToBeStarted++;
-    }
-    qDebug() << "Starting new thread" << endl;
     QPair<QStringList,QStringList> fileNames = getFileNamesFromPlayerSelectors();
-    trainerModerators[index] = new Moderator;
-    trainerModerators[index]->setTimeUntilMove(timePerTurnSlider->value());
+    trainerModerator->setTimeUntilMove(timePerTurnSlider->value());
     QStringList file1MinusFirst = fileNames.first;
     file1MinusFirst.removeFirst();
     QStringList file2MinusFirst = fileNames.second;
     file2MinusFirst.removeFirst();
-    if(trainerModerators[index]->testProgram(fileNames.first[0],file1MinusFirst)&&trainerModerators[index]->testProgram(fileNames.second[0],file2MinusFirst)){
-        if(trainerModerators[index]->startGame(fileNames.first,fileNames.second,*AIFolder)){
-            //QtConcurrent::run(trainerModerators[index],&Moderator::startGame,fileNames.first,fileNames.second,*AIFolder);
-            connect(trainerModerators[index],SIGNAL(gameHasEnded()),this,SLOT(gameHasEnded()),Qt::QueuedConnection);
+        if(trainerModerator->startGame(fileNames.first,fileNames.second,*AIFolder)){
             gamesRemainingToBeStarted-=1;
             percentStarted->setValue(-1*gamesRemainingToBeStarted);
         }
         else{
             start(recursion+1);
         }
-    }
-    else{
-        start(recursion+1);
-    }
 
 
 }
@@ -166,7 +158,6 @@ void Trainer::gameHasEnded(){
     qDebug() << "A game has ended";
     gamesRemainingToBeFinished-=1;
     percentFinished->setValue(-1*gamesRemainingToBeFinished);
-    sleep(100);
     if(gamesRemainingToBeStarted>=1)
         start();
     if(gamesRemainingToBeFinished==0){
@@ -212,11 +203,7 @@ void Trainer::goButtonPressed(){
             box->setEnabled(false);
         }
         setGoButton();
-        qDebug() << "Number of cores" << numberOfCores;
-        for(int i = 0;i<numberOfCores;i++){
-            start();
-            sleep(100);
-        }
+        start();
         gamesRunning = true;
     }
     else{
@@ -290,16 +277,23 @@ QPair<QStringList,QStringList> Trainer::getFileNamesFromPlayerSelectors(){
     return retVals;
 }
 QPair<int,int> Trainer::getNextPlayers(){
-    if(player2PullIndex<playerFileNames->size()-1)
-        player2PullIndex++;
-    else{
-        if(player1PullIndex<playerFileNames->size()-2)
-            player1PullIndex++;
-        else
-            player1PullIndex=0;
-        player2PullIndex=player1PullIndex+1;
+    if(switchSides==false){
+        if(player2PullIndex<playerFileNames->size()-1)
+            player2PullIndex++;
+        else{
+            if(player1PullIndex<playerFileNames->size()-2)
+                player1PullIndex++;
+            else
+                player1PullIndex=0;
+            player2PullIndex=player1PullIndex+1;
+        }
+        switchSides = true;
+        return qMakePair(player1PullIndex,player2PullIndex);
     }
-    return qMakePair(player1PullIndex,player2PullIndex);
+    else{
+        switchSides = false;
+        return qMakePair(player2PullIndex,player1PullIndex);
+    }
 }
 
 void Trainer::resetGoButton(){

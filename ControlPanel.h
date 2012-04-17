@@ -19,6 +19,9 @@ public:
     void closeEvent(QCloseEvent *event);
     void showEvent(QShowEvent* event);
     void hideEvent(QHideEvent *);
+    void focusInEvent(QFocusEvent *);
+    void focusOutEvent(QFocusEvent *);
+    void mousePressEvent(QMouseEvent *);
     enum gamestates{GAME_STOPPED,PLAYER_1_TO_MOVE,PLAYER_2_TO_MOVE,PLAYER_1_QUESTION_MARK,PLAYER_2_QUESTION_MARK};
     int gamestate;
     // Child windows
@@ -102,6 +105,7 @@ public:
     QStringList getFileNameFromPlayerSelector(bool isPlayer1);
     static const int MOVE_TIME_LIMIT = 10;
  public slots:
+    void onApplicationFocusChanged(QWidget*, QWidget*);
     void connectManualInputToModerator();
     void gameHasEnded();
     void loadFailed(QString player);
