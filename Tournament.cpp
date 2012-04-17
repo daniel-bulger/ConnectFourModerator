@@ -32,6 +32,8 @@ Tournament::Tournament(players_results_t players_results)
         }
     }
 
+    tournamentTree->push_back(winner(tournamentTree->data()[tournamentTree->size()][0], tournamentTree->data()[tournamentTree->size()][1]));
+
 }
 
 QString Tournament::winner(QString & p1, QString & p2)
