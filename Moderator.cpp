@@ -222,14 +222,15 @@ void Moderator::endGame(){
         player2->deleteLater();
     player2 = NULL;
     gamestate = GAME_STOPPED;
+    emit gamestring(currentGame.getMoveString());
     emit gameHasEnded();
 }
-bool Moderator::startGame(QStringList player1FileName, QStringList player2FileName, QString logFolder){
+bool Moderator::startGame(QStringList player1FileName, QStringList player2FileName, QString logFolder, bool swapTurns){
     logFilePath = logFolder;
     if(startProgram(player1FileName,true)&&startProgram(player2FileName,false)){
         if(!player1||!player2)
             return false;
-        if (player1GoesFirst) {
+        if (player1GoesFirst || (!swapTurns)) {
             player1GoesFirst = false;
             if(!player1->isManual){
                 player1->write("1\n");

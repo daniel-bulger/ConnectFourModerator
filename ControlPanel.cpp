@@ -444,11 +444,11 @@ void ControlPanel::boardBackChanged(bool isChecked){
     }
 }
 void ControlPanel::runMassTrials(){
-    trainers.push_back(new Trainer(this,true));
+    trainers.push_back(new Trainer(this,0));
 
 }
 void ControlPanel::chooseAIsToTrain(){
-    trainers.push_back(new Trainer(this,false));
+    trainers.push_back(new Trainer(this,2));
 }
 
 void ControlPanel::boardAutoChanged(bool isChecked,bool recur){

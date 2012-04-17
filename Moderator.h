@@ -61,6 +61,7 @@ signals:
     void gameHasEnded();
     void loadSuccess(QStringList programName);
     void acceptManualInput();
+    void gamestring(QString gamestring);
 public slots:
     void directoryTextBoxEdited();
     void decrementTimePerTurnTimer();
@@ -72,7 +73,7 @@ public slots:
     void player2DroppedPiece(int col);
     void pauseGame();
     void resumeGame();
-    bool startGame(QStringList player1FileName, QStringList player2FileName, QString logFolder);
+    bool startGame(QStringList player1FileName, QStringList player2FileName, QString logFolder, bool swapTurns = true);
     void setTimeUntilMove(int msecs);
     bool startProgram(QStringList programName, bool isPlayer1);
 };

@@ -13,7 +13,7 @@ class Trainer : public QWidget
     Q_OBJECT
 
 public:
-    Trainer(ControlPanel* parent = 0, bool isSimple = true);
+    Trainer(ControlPanel* parent = 0, int type = 0);
     ~Trainer();
 
 
@@ -29,14 +29,18 @@ private:
     QVector<QPair<int,int> > lastPlayers;
     QVBoxLayout* simpleLayout;
     QVBoxLayout* advancedLayout;
+    QVBoxLayout* tournamentLayout;
+    QVector<QHBoxLayout*> fileNameLayouts;
+    QVBoxLayout* fileNameLayoutHolder;
     QPushButton* goButton;
     QPushButton* pauseButton;
+    QPushButton* addPlayerButton;
+    QPushButton* removePlayerButton;
+    QListWidget* playerList;
     QString* AIFolder;
     QPushButton* chooseDirectoryButton;
     QLineEdit* chooseDirectoryText;
     QVector<QComboBox*>* playerFileNames;
-    QPushButton* addPlayer;
-    QPushButton* removePlayer;
     QLabel* fewestGamesPerCombinationLabel;
     QSpinBox* fewestGamesPerCombinationSpinBox;
     QLabel* numTrialsLabel;
@@ -45,17 +49,23 @@ private:
     Player* player2;
     QProgressBar* percentStarted;
     QProgressBar* percentFinished;
+    QVector<QString> gameStrings;
+    QVector<QString> playerNamesVector;
+    QVector<QString> oppNamesVector;
     bool switchSides;
     int player1PullIndex;
     int player2PullIndex;
     int gamesRemainingToBeStarted;
     int gamesRemainingToBeFinished;
+    int type;
     bool gamesRunning;
     bool gamesArePaused;
     int numberOfCores;
     void closeEvent(QCloseEvent *event);
 
 public slots:
+    void addPlayer();
+    void removePlayer();
     void populateComboBoxes();
     void goButtonPressed();
     void chooseDirectory();
@@ -63,7 +73,8 @@ public slots:
     void resume();
     void stop();
     void start(int recursion = 0);
-    QPair<QStringList,QStringList> getFileNamesFromPlayerSelectors();
+    QPair<QStringList,QStringList> getFileNamesFromPlayerSelectors(bool isTournament = false);
+    void addGamestringToVector(QString gamestring);
     void setGoButton();
     void resetGoButton();
     void showPauseButton();
@@ -71,7 +82,7 @@ public slots:
     void setPauseButton();
     void resetPauseButton();
     void gameHasEnded();
-    QPair<int,int> getNextPlayers();
+    QPair<int,int> getNextPlayers(bool isTournamentMode = false);
     void sleep(int mSecs);
 
 };
