@@ -12,8 +12,8 @@ ControlPanel::ControlPanel()
     //init menu bar
     menuBar = new QMenuBar(this);
     fileMenu = menuBar->addMenu("File");
-    fileMenu->addAction("Change AI dir",parent,SLOT(chooseDirectory()));
-    fileMenu->addAction("New Tournament",parent,SLOT(startTournament()));
+    fileMenu->addAction("Change AI dir",this,SLOT(chooseDirectory()));
+    fileMenu->addAction("New Tournament",this,SLOT(initTournament()));
     fileMenu->addSeparator();
     fileMenu->addAction("Exit",this,SLOT(close()));
     preferencesMenu = menuBar->addMenu("Preferences");
@@ -620,12 +620,14 @@ void ControlPanel::connectManualInputToModerator(){
 
 void ControlPanel::initTournament()
 {
+    qDebug() << "TTTTTTT";
     Trainer* trainer = new Trainer(this, 2);
-    trainer->connect(trainer, SIGNAL(finished(players_results_t)), SLOT(startTournament(players_results_t)));
+    connect(trainer, SIGNAL(finished(Tournament::players_results_t)),this, SLOT(startTournament(Tournament::players_results_t)));
 }
 
 void ControlPanel::startTournament(Tournament::players_results_t results)
 {
+    qDebug() << "start tournament";
     this->tournament = new Tournament(results);
     tournament->printTree();
 }

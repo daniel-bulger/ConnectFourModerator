@@ -93,6 +93,7 @@ Trainer::Trainer(ControlPanel *parent, int type) :parent(parent),type(type),
     if(type==2){
         this->setLayout(tournamentLayout);
         connect(trainerModerator,SIGNAL(gamestring(QString)),this,SLOT(addGamestringToVector(QString)));
+        connect(trainerModerator,SIGNAL(gameOver(int)),this,SLOT(appendToWinnersVector(int)));
     }
     this->show();
     QtConcurrent::run(this, &Trainer::populateComboBoxes);
@@ -108,6 +109,17 @@ void Trainer::closeEvent(QCloseEvent *event){
 }
 void Trainer::addGamestringToVector(QString gamestring){
     gameStrings.push_back(gamestring);
+}
+void Trainer::appendToWinnersVector(int winner){
+    Tournament::win_state winnerState;
+    if(winner==-2 || winner==1)
+        winner=Tournament::WIN;
+    if(winner==-1 || winner==2)
+        winner=Tournament::LOSS;
+    if(winner==0)
+        winner=Tournament::TIE;
+    winnerState=(Tournament::win_state)winner;
+    gameWinners.push_back(winnerState);
 }
 
 void Trainer::addPlayer(){
@@ -138,6 +150,20 @@ void Trainer::stop(){
     gamesRemainingToBeFinished=0;
     percentStarted->setValue(0);
     percentFinished->setValue(0);
+    QVector<QPair<QString,QVector<QPair<QPair<QString,Tournament::win_state>,QString> > > > allData;
+    QVector<QString> allPlayers;
+    for( int i = 0; i<playerNamesVector.size();i++){
+        if(!allPlayers.contains(playerNamesVector[i])){
+            allPlayers.push_back(playerNamesVector[i]);
+            allData.push_back(qMakePair(playerNamesVector[i],QVector<QPair<QPair<QString,Tournament::win_state>,QString> >() ) );
+            allData.last().first=playerNamesVector[i];
+        }
+        int j = allPlayers.indexOf(playerNamesVector[i]);
+        allData[j].second.push_back(qMakePair(qMakePair(oppNamesVector[i],gameWinners[i]),gameStrings[i]));
+    }
+    qDebug() << "EMIT FINISHED ";
+    emit fin(20);
+    emit finished(allData);
 
     Moderator* moderator;
     foreach(moderator,trainerModerators){
@@ -227,6 +253,9 @@ void Trainer::goButtonPressed(){
     if(gamesRunning==false){
         if(type==2){
             playerNamesVector.clear();
+            playerNamesVector.clear();
+            oppNamesVector.clear();
+            gameWinners.clear();
         }
         qDebug() << "Num trials: " << numTrialsInput->text().toInt();
         gamesRemainingToBeStarted = numTrialsInput->text().toInt();

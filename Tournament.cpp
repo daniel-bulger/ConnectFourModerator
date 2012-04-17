@@ -1,5 +1,4 @@
 #include "Tournament.h"
-
 Tournament::Tournament(players_results_t players_results)
 {
     results = new players_results_t(players_results);
@@ -10,7 +9,7 @@ Tournament::Tournament(players_results_t players_results)
     tournamentTree->resize(ceil(log2(results->size())));
     for (int i=0; i<tournamentTree->size(); i++)
     {
-        tournamentTree[i].resize(ceil(results->size()/pow(2, i)));
+        tournamentTree->data()[i].resize(ceil(results->size()/pow(2, i)));
     }
 
     for (int i=0; i<tournamentTree->at(0).size(); i++)
@@ -22,9 +21,9 @@ Tournament::Tournament(players_results_t players_results)
     {
         for (int j=0; j<tournamentTree->at(i).size(); j++)
         {
-            if (tournamentTree[i-1].size() < j*2+1)
+            if (tournamentTree->data()[i-1].size() < j*2+1)
             {
-                tournamentTree[i][j] = tournamentTree[i-1][j*2];
+                tournamentTree->data()[i][j] = tournamentTree->data()[i-1][j*2];
             }
             else
             {
@@ -84,10 +83,10 @@ void Tournament::printTree()
         qDebug() << "----------------------------------------";
         qDebug() << " Round " << i << ":";
         qDebug() << "----------------------------------------";
-        for (int j=0; j<tournamentTree->at(i).size(); j+=2)
+        for (int j=0; j<tournamentTree->data()[i].size(); j+=2)
         {
-            if (j+1 < tournamentTree->at(i).size())
-                qDebug() << tournamentTree->data()[i][j] << " vs. " << tournamentTree[i][j+1];
+            if (j+1 < tournamentTree->data()[i].size())
+                qDebug() << tournamentTree->data()[i][j] << " vs. " << tournamentTree->data()[i][j+1];
             else
                 qDebug() << tournamentTree->data()[i][j] << " gets to pass this round";
         }

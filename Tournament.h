@@ -3,6 +3,8 @@
 
 #include <QObject>
 #include <QtGui>
+#include <algorithm>
+#include <cmath>
 
 class Tournament : public QObject
 {

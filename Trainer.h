@@ -4,6 +4,7 @@
 #include "Moderator.h"
 #include "ControlPanel.h"
 #include "Player.h"
+#include "Tournament.h"
 #include <QtGui>
 #include <QtCore>
 #include <QMainWindow>
@@ -52,6 +53,7 @@ private:
     QVector<QString> gameStrings;
     QVector<QString> playerNamesVector;
     QVector<QString> oppNamesVector;
+    QVector<Tournament::win_state> gameWinners;
     bool switchSides;
     int player1PullIndex;
     int player2PullIndex;
@@ -62,8 +64,11 @@ private:
     bool gamesArePaused;
     int numberOfCores;
     void closeEvent(QCloseEvent *event);
-
+signals:
+    void finished(Tournament::players_results_t results);
+    void fin(int);
 public slots:
+    void appendToWinnersVector(int winner);
     void addPlayer();
     void removePlayer();
     void populateComboBoxes();

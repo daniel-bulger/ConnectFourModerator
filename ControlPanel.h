@@ -9,8 +9,6 @@
 #include <QtGui>
 #include <QtCore>
 #include <QMainWindow>
-#include <algorithm>
-#include <cmath>
 class Moderator;  // forward declaration
 class Trainer;
 class ControlPanel : public QWidget
