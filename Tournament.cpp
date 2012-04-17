@@ -21,7 +21,7 @@ Tournament::Tournament(players_results_t players_results)
     {
         for (int j=0; j<tournamentTree->at(i).size(); j++)
         {
-            if (tournamentTree->data()[i-1].size() < j*2+1)
+            if (tournamentTree->data()[i-1].size() % 2 != 0 && j == tournamentTree->data()[i].size())
             {
                 tournamentTree->data()[i][j] = tournamentTree->data()[i-1][j*2];
             }
