@@ -19,7 +19,8 @@ SOURCES += main.cpp\
     ControlPanel.cpp \
     Moderator.cpp \
     Player.cpp \
-    Trainer.cpp
+    Trainer.cpp \
+    Tournament.cpp
 
 HEADERS  += \
     Board.h \
@@ -28,36 +29,11 @@ HEADERS  += \
     ControlPanel.h \
     Moderator.h \
     Player.h \
-    Trainer.h
+    Trainer.h \
+    Tournament.h
 
 FORMS += \
     trainerdialog.ui
 
 OTHER_FILES += \
     icon.rc
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
