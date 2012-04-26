@@ -575,7 +575,11 @@ void ControlPanel::chooseDirectory(){
 void ControlPanel::loadFailed(QString player)
 {
     QMessageBox fail;
-    QString message = "Player " + player + " failed to load!";
+    QString message;
+    if(player == "")
+        message = "Please select an AI from the list.";
+    else
+        message = "Player " + player + " failed to load!";
     console(message);
     fail.setText(message);
     fail.exec();

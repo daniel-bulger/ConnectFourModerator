@@ -74,10 +74,9 @@ public slots:
     void populateComboBoxes();
     void goButtonPressed();
     void chooseDirectory();
-    void pause();
-    void resume();
+    void pauseButtonPressed();
     void stop();
-    void start(int recursion = 0);
+    void start(int recursion = 0, QPair<QStringList,QStringList> fileNames = qMakePair(QStringList(),QStringList()));
     QPair<QStringList,QStringList> getFileNamesFromPlayerSelectors(bool isTournament = false);
     void addGamestringToVector(QString gamestring);
     void setGoButton();

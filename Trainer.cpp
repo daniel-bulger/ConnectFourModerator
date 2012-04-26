@@ -67,7 +67,7 @@ Trainer::Trainer(ControlPanel *parent, int type) :parent(parent),type(type),
     simpleLayout->addWidget(chooseDirectoryButton);
     simpleLayout->addWidget(numTrialsLabel);
     simpleLayout->addWidget(numTrialsInput);
-    simpleLayout->addWidget(percentStarted);
+    //simpleLayout->addWidget(percentStarted);
     simpleLayout->addWidget(percentFinished);
     simpleLayout->addWidget(timePerTurnSlider);
     simpleLayout->addWidget(goButton);
@@ -80,12 +80,13 @@ Trainer::Trainer(ControlPanel *parent, int type) :parent(parent),type(type),
     connect(removePlayerButton,SIGNAL(clicked()),SLOT(removePlayer()));
     tournamentLayout->addWidget(playerList);
     tournamentLayout->addWidget(numTrialsLabel);
-    tournamentLayout->addWidget(percentStarted);
+    //tournamentLayout->addWidget(percentStarted);
     tournamentLayout->addWidget(percentFinished);
     tournamentLayout->addWidget(goButton);
     tournamentLayout->addWidget(pauseButton);
 
     connect(goButton, SIGNAL(clicked()), this, SLOT(goButtonPressed()));
+    connect(pauseButton, SIGNAL(clicked()),this,SLOT(pauseButtonPressed()));
     connect(chooseDirectoryButton,SIGNAL(clicked()),this,SLOT(chooseDirectory()));
     if(type==0){
         this->setLayout(simpleLayout);
@@ -105,6 +106,7 @@ Trainer::~Trainer()
 
 }
 void Trainer::closeEvent(QCloseEvent *event){
+    gamesRemainingToBeFinished=1;
     this->stop();
 }
 void Trainer::addGamestringToVector(QString gamestring){
@@ -124,47 +126,56 @@ void Trainer::appendToWinnersVector(int winner){
 
 void Trainer::addPlayer(){
 
-    QString player = QFileDialog::getOpenFileName(0,"Choose a program...",settings->value("AI_DIRECTORY").toString());
+    QStringList players = QFileDialog::getOpenFileNames(0,"Choose a program...",settings->value("AI_DIRECTORY").toString());
 
     bool found = false;
-    for (int i = 0; i < playerList->count(); ++i) {
-        if (playerList->item(i)->data(Qt::DisplayRole).toString() == player) {
-            found = true;
-            break;
+    for(int playerNum = 0; playerNum<players.size();playerNum++){
+        for (int i = 0; i < playerList->count(); ++i) {
+            if (playerList->item(i)->data(Qt::DisplayRole).toString() == players[playerNum]) {
+                found = true;
+                break;
+            }
         }
-    }
-    if (!found) {
-        playerList->insertItem(playerList->count(),player);
-        numTrialsInput->setText(QString().setNum((playerList->count()) * (playerList->count()-1)));
+        if (!found) {
+            playerList->insertItem(playerList->count(),players[playerNum]);
+            numTrialsLabel->setText("Number of trials: "+QString().setNum((playerList->count()) * (playerList->count()-1)));
+            numTrialsInput->setText(QString().setNum((playerList->count()) * (playerList->count()-1)));
+
+        }
     }
 
 }
 void Trainer::removePlayer(){
     qDeleteAll(playerList->selectedItems());
+    numTrialsLabel->setText("Number of trials: "+QString().setNum((playerList->count()) * (playerList->count()-1)));
+    numTrialsInput->setText(QString().setNum((playerList->count()) * (playerList->count()-1)));
+
 
 }
 
 void Trainer::stop(){
-    gamesRunning = false;
-    gamesRemainingToBeStarted=0;
-    gamesRemainingToBeFinished=0;
+
     percentStarted->setValue(0);
     percentFinished->setValue(0);
     QVector<QPair<QString,QVector<QPair<QPair<QString,Tournament::win_state>,QString> > > > allData;
     QVector<QString> allPlayers;
-    for( int i = 0; i<playerNamesVector.size();i++){
-        if(!allPlayers.contains(playerNamesVector[i])){
-            allPlayers.push_back(playerNamesVector[i]);
-            allData.push_back(qMakePair(playerNamesVector[i],QVector<QPair<QPair<QString,Tournament::win_state>,QString> >() ) );
-            allData.last().first=playerNamesVector[i];
+    if(gamesRemainingToBeFinished==0){  // if we actually finished all of the trials
+        qDebug() << "Number of games played: " << playerNamesVector.size();
+        for( int i = 0; i<playerNamesVector.size();i++){
+            if(!allPlayers.contains(playerNamesVector[i])){
+                allPlayers.push_back(playerNamesVector[i]);
+                allData.push_back(qMakePair(playerNamesVector[i],QVector<QPair<QPair<QString,Tournament::win_state>,QString> >() ) );
+            }
+            int j = allPlayers.indexOf(playerNamesVector[i]);
+            allData[j].second.push_back(qMakePair(qMakePair(oppNamesVector[i],gameWinners[i]),gameStrings[i]));
         }
-        int j = allPlayers.indexOf(playerNamesVector[i]);
-        allData[j].second.push_back(qMakePair(qMakePair(oppNamesVector[i],gameWinners[i]),gameStrings[i]));
+        qDebug() << "EMIT FINISHED ";
+        emit finished(allData);
     }
-    qDebug() << "EMIT FINISHED ";
-    emit fin(20);
-    emit finished(allData);
-
+    allData.clear();
+    gamesRunning = false;
+    gamesRemainingToBeStarted=0;
+    gamesRemainingToBeFinished=0;
     Moderator* moderator;
     foreach(moderator,trainerModerators){
         moderator->endGame();
@@ -175,21 +186,47 @@ void Trainer::stop(){
         box->setEnabled(true);
     }
 }
-void Trainer::pause(){
-    //pause running those trials
-}
-void Trainer::resume(){
-    //resume running those trials
-}
-void Trainer::start(int recursion){
+void Trainer::pauseButtonPressed(){
+    if(pauseButton->text()==PAUSE_BUTTON_PAUSE_TEXT){
+        qDebug() << "Pause button pressed" << endl;
+        this->setPauseButton();
+        trainerModerator->pauseGame();
+    }
+    else{
+        if(pauseButton->text()==PAUSE_BUTTON_RESUME_TEXT){
+            qDebug() << "Resume button pressed" << endl;
+            this->resetPauseButton();
+            trainerModerator->resumeGame();
+        }
+    }}
+void Trainer::start(int recursion, QPair<QStringList,QStringList> fileNames){
     if(recursion>5){
+        if(type==2){
+            playerNamesVector.push_back(fileNames.first.join("/"));
+            oppNamesVector.push_back(fileNames.second.join("/"));
+        }
+        addGamestringToVector(QString(""));
+        QStringList stringList1 = fileNames.first;
+        stringList1.removeFirst();
+        if(!testerModerator->startProgram(fileNames.first,true))
+            appendToWinnersVector(Tournament::LOSS);
+        else{
+            qDebug() << "Second player failed";
+            QStringList stringList2 = fileNames.second;
+            stringList2.removeFirst();
+            appendToWinnersVector(Tournament::WIN);
+        }
+        gamesRemainingToBeStarted-=1;
+        gameHasEnded();
+        return;
+    }
+    if(gamesRemainingToBeStarted<=0){
+        gamesRemainingToBeFinished = 1;  // Hack to make sure we don't try to calculate a tournament tree if no games were played
         stop();
         return;
     }
-    int index = 0;
-    if(gamesRemainingToBeStarted<=0)
-        return;
-    QPair<QStringList,QStringList> fileNames = getFileNamesFromPlayerSelectors(type==2);
+    if(fileNames == qMakePair(QStringList(),QStringList()))
+        fileNames = getFileNamesFromPlayerSelectors(type==2);
     qDebug() << fileNames;
     trainerModerator->setTimeUntilMove(timePerTurnSlider->value());
     QStringList file1MinusFirst = fileNames.first;
@@ -206,7 +243,7 @@ void Trainer::start(int recursion){
         percentStarted->setValue(-1*gamesRemainingToBeStarted);
     }
     else{
-        start(recursion+1);
+        start(recursion+1, fileNames);
     }
 }
 void Trainer::sleep(int mSecs){
@@ -220,9 +257,8 @@ void Trainer::gameHasEnded(){
     percentFinished->setValue(-1*gamesRemainingToBeFinished);
     if(gamesRemainingToBeStarted>=1)
         start();
-    if(gamesRemainingToBeFinished==0){
+    else{
         stop();
-        qDebug() << "WE ALL DONE HEAH";
     }
 }
 void Trainer::populateComboBoxes(){
@@ -250,7 +286,9 @@ void Trainer::populateComboBoxes(){
     }
 }
 void Trainer::goButtonPressed(){
+    qDebug() << "Go button pressed";
     if(gamesRunning==false){
+        qDebug() << "GO!";
         if(type==2){
             playerNamesVector.clear();
             playerNamesVector.clear();
@@ -270,10 +308,11 @@ void Trainer::goButtonPressed(){
             box->setEnabled(false);
         }
         setGoButton();
-        start();
         gamesRunning = true;
+        start();
     }
     else{
+        qDebug()<<"stop!";
         stop();
         QComboBox* box;
         foreach(box,*playerFileNames){
@@ -354,10 +393,10 @@ QPair<QStringList,QStringList> Trainer::getFileNamesFromPlayerSelectors(bool isT
 QPair<int,int> Trainer::getNextPlayers(bool isTournamentMode){
     if(switchSides==false){
         if(isTournamentMode){
-            if(player2PullIndex<playerList->count()-1)
+            if(player2PullIndex<(playerList->count()-1))
                 player2PullIndex++;
             else{
-                if(player1PullIndex<playerList->count()-2)
+                if(player1PullIndex<(playerList->count()-2))
                     player1PullIndex++;
                 else
                     player1PullIndex=0;
@@ -376,10 +415,14 @@ QPair<int,int> Trainer::getNextPlayers(bool isTournamentMode){
             }
         }
         switchSides = true;
+        qDebug() << "player1PullIndex = " << player1PullIndex;
+        qDebug() << "player2PullIndex = " << player2PullIndex;
         return qMakePair(player1PullIndex,player2PullIndex);
     }
     else{
         switchSides = false;
+        qDebug() << "player1PullIndex = " << player1PullIndex;
+        qDebug() << "player2PullIndex = " << player2PullIndex;
         return qMakePair(player2PullIndex,player1PullIndex);
     }
 }

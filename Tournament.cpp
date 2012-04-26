@@ -2,14 +2,15 @@
 Tournament::Tournament(players_results_t players_results)
 {
     results = new players_results_t(players_results);
-
+    qDebug() << *results;
     std::random_shuffle(results->begin(), results->end());
-
+    qDebug() << "Number of results: " << results->size();
     this->tournamentTree = new t_tree_t();
-    tournamentTree->resize(ceil(log2(results->size())));
+    tournamentTree->resize(ceil(log2(results->size()/2))+1);
     for (int i=0; i<tournamentTree->size(); i++)
     {
         tournamentTree->data()[i].resize(ceil(results->size()/pow(2, i)));
+        qDebug() << "Size of rank " << i << ": " << ceil(results->size()/pow(2, i));
     }
 
     for (int i=0; i<tournamentTree->at(0).size(); i++)
@@ -21,7 +22,7 @@ Tournament::Tournament(players_results_t players_results)
     {
         for (int j=0; j<tournamentTree->at(i).size(); j++)
         {
-            if (tournamentTree->data()[i-1].size() % 2 != 0 && j == tournamentTree->data()[i].size())
+            if (tournamentTree->data()[i-1].size() % 2 != 0 && j == tournamentTree->data()[i].size()-1)
             {
                 tournamentTree->data()[i][j] = tournamentTree->data()[i-1][j*2];
             }
@@ -31,8 +32,8 @@ Tournament::Tournament(players_results_t players_results)
             }
         }
     }
-
-    tournamentTree->push_back(winner(tournamentTree->data()[tournamentTree->size()][0], tournamentTree->data()[tournamentTree->size()][1]));
+    tournamentTree->resize(tournamentTree->size()+1);
+    tournamentTree->data()[tournamentTree->size()-1].push_back(winner(tournamentTree->data()[tournamentTree->size()-2][0], tournamentTree->data()[tournamentTree->size()-2][1]));
 
 }
 
@@ -54,13 +55,17 @@ QString Tournament::winner(QString & p1, QString & p2)
             p2vp1 = game2.first.second;
         }
     }
+    bool bothWonWhenFirst  = p1vp2+p2vp1==2;
+    bool bothWonWhenSecond = p1vp2+p2vp1==-2;
+    bool bothTied          = ((p1vp2==0) && (p2vp1==0));
 
-    if (p1vp2 + p2vp1 == 0)
+    if (bothWonWhenFirst || bothWonWhenSecond || bothTied )
     {
+        qDebug() << "TIE";
         return (qrand() % 2 ? p1 : p2);
     }
 
-    if (p1vp2 == 1)
+    if (p1vp2 == 1 || p2vp1 == -1)
         return p1;
     else
         return p2;
