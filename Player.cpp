@@ -17,16 +17,18 @@ Player::Player(bool isPlayer1,QString progName, QStringList args):progName(progN
         if(isPlayer1){
             // TODO figure out where to put these
             QString fileName = "./player1";
-            fileName+=QString().setNum(this->getNextId()+QDateTime::currentMSecsSinceEpoch());
+            //fileName+=QString().setNum(this->getNextId()+QDateTime::currentMSecsSinceEpoch());
             fileName+=".txt";
             file = new QFile(fileName);
+            file->remove();
             this->setStandardOutputFile(fileName,QIODevice::Truncate);
         }
         else{
             QString fileName = "./player2";
-            fileName+=QString().setNum(this->getNextId()+QDateTime::currentMSecsSinceEpoch());
+            //fileName+=QString().setNum(this->getNextId()+QDateTime::currentMSecsSinceEpoch());
             fileName+=".txt";
             file = new QFile(fileName);
+            file->remove();
             this->setStandardOutputFile(fileName,QIODevice::Truncate);
         }
         oldOutput = "";
@@ -44,6 +46,10 @@ Player::Player(bool isPlayer1,QString progName, QStringList args):progName(progN
             }
         }
 }
+Player::~Player(){
+    file->remove();
+}
+
 void Player::startManual(){
 
 }

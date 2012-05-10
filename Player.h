@@ -15,6 +15,7 @@ public:
     Player();
     Player(const Player&);
     Player(bool isPlayer1,QString progName, QStringList args = QStringList());
+    ~Player();
     void startManual();
     bool getQuestionMark();
     void parsePath();

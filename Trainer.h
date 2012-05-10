@@ -31,13 +31,23 @@ private:
     QVBoxLayout* simpleLayout;
     QVBoxLayout* advancedLayout;
     QVBoxLayout* tournamentLayout;
-    QVector<QHBoxLayout*> fileNameLayouts;
-    QVBoxLayout* fileNameLayoutHolder;
+    QHBoxLayout* playerStatsLayout;
     QPushButton* goButton;
     QPushButton* pauseButton;
     QPushButton* addPlayerButton;
     QPushButton* removePlayerButton;
+    QLabel*      playerListLabel;
     QListWidget* playerList;
+    QVBoxLayout* playerListLayout;
+    QVBoxLayout* winsLayout;
+    QVBoxLayout* lossesLayout;
+    QVBoxLayout* tiesLayout;
+    QLabel*      winsLabel;
+    QListWidget* wins;
+    QLabel*      lossesLabel;
+    QListWidget* losses;
+    QLabel*      tiesLabel;
+    QListWidget* ties;
     QString* AIFolder;
     QPushButton* chooseDirectoryButton;
     QLineEdit* chooseDirectoryText;
@@ -64,6 +74,7 @@ private:
     bool gamesArePaused;
     int numberOfCores;
     void closeEvent(QCloseEvent *event);
+    void updateScores(int winner);
 signals:
     void finished(Tournament::players_results_t results);
     void fin(int);

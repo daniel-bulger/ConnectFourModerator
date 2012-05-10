@@ -53,7 +53,17 @@ Trainer::Trainer(ControlPanel *parent, int type) :parent(parent),type(type),
     chooseDirectoryButton = new QPushButton("Load from...");
     addPlayerButton = new QPushButton("Add player");
     removePlayerButton = new QPushButton("Remove player");
+    playerListLabel = new QLabel("Player paths:");
     playerList = new QListWidget();
+    winsLabel = new QLabel("W");
+    wins = new QListWidget();
+    wins->setFixedSize(50,200);
+    lossesLabel = new QLabel("L");
+    losses = new QListWidget();
+    losses->setFixedSize(50,200);
+    tiesLabel = new QLabel("T");
+    ties = new QListWidget();
+    ties->setFixedSize(50,200);
     chooseDirectoryText = new QLineEdit();
     chooseDirectoryText->setText(*(AIFolder));
     playerFileNames = new QVector<QComboBox*>();
@@ -78,9 +88,25 @@ Trainer::Trainer(ControlPanel *parent, int type) :parent(parent),type(type),
     connect(addPlayerButton,SIGNAL(clicked()),SLOT(addPlayer()));
     tournamentLayout->addWidget(removePlayerButton);
     connect(removePlayerButton,SIGNAL(clicked()),SLOT(removePlayer()));
-    tournamentLayout->addWidget(playerList);
+    playerStatsLayout = new QHBoxLayout();
+    playerListLayout = new QVBoxLayout();
+    winsLayout = new QVBoxLayout();
+    lossesLayout = new QVBoxLayout();
+    tiesLayout = new QVBoxLayout();
+    playerListLayout->addWidget(playerListLabel);
+    playerListLayout->addWidget(playerList);
+    playerStatsLayout->addLayout(playerListLayout);
+    winsLayout->addWidget(winsLabel);
+    winsLayout->addWidget(wins);
+    playerStatsLayout->addLayout(winsLayout);
+    lossesLayout->addWidget(lossesLabel);
+    lossesLayout->addWidget(losses);
+    playerStatsLayout->addLayout(lossesLayout);
+    tiesLayout->addWidget(tiesLabel);
+    tiesLayout->addWidget(ties);
+    playerStatsLayout->addLayout(tiesLayout);
+    tournamentLayout->addLayout(playerStatsLayout);
     tournamentLayout->addWidget(numTrialsLabel);
-    //tournamentLayout->addWidget(percentStarted);
     tournamentLayout->addWidget(percentFinished);
     tournamentLayout->addWidget(goButton);
     tournamentLayout->addWidget(pauseButton);
@@ -120,8 +146,40 @@ void Trainer::appendToWinnersVector(int winner){
         winner=Tournament::LOSS;
     if(winner==0)
         winner=Tournament::TIE;
+    updateScores(winner);
     winnerState=(Tournament::win_state)winner;
     gameWinners.push_back(winnerState);
+}
+void Trainer::updateScores(int winner){
+    int firstPlayerIndex;
+    int secondPlayerIndex;
+    if(switchSides){   // if this is set, then the previous players were not switched
+        firstPlayerIndex = player1PullIndex;
+        secondPlayerIndex = player2PullIndex;
+    }
+    else{
+        firstPlayerIndex = player2PullIndex;
+        secondPlayerIndex = player1PullIndex;
+    }
+    int player1Wins = wins->item(firstPlayerIndex)->data(Qt::DisplayRole).toInt();
+    int player1Losses = losses->item(firstPlayerIndex)->data(Qt::DisplayRole).toInt();
+    int player1Ties = ties->item(firstPlayerIndex)->data(Qt::DisplayRole).toInt();
+    int player2Wins = wins->item(secondPlayerIndex)->data(Qt::DisplayRole).toInt();
+    int player2Losses = losses->item(secondPlayerIndex)->data(Qt::DisplayRole).toInt();
+    int player2Ties = ties->item(secondPlayerIndex)->data(Qt::DisplayRole).toInt();
+
+    if(winner==Tournament::WIN){
+        wins->item(firstPlayerIndex)->setData(Qt::DisplayRole,QVariant(player1Wins+1));
+        losses->item(secondPlayerIndex)->setData(Qt::DisplayRole,QVariant(player2Losses+1));
+    }
+    if(winner==Tournament::LOSS){
+        wins->item(secondPlayerIndex)->setData(Qt::DisplayRole,QVariant(player2Wins+1));
+        losses->item(firstPlayerIndex)->setData(Qt::DisplayRole,QVariant(player1Losses+1));
+    }
+    if(winner==Tournament::TIE){
+        ties->item(firstPlayerIndex)->setData(Qt::DisplayRole,QVariant(player1Ties+1));
+        ties->item(secondPlayerIndex)->setData(Qt::DisplayRole,QVariant(player2Ties+1));
+    }
 }
 
 void Trainer::addPlayer(){
@@ -131,13 +189,18 @@ void Trainer::addPlayer(){
     bool found = false;
     for(int playerNum = 0; playerNum<players.size();playerNum++){
         for (int i = 0; i < playerList->count(); ++i) {
-            if (playerList->item(i)->data(Qt::DisplayRole).toString() == players[playerNum]) {
+            if (playerList->item(i)->data(Qt::UserRole).toString() == players[playerNum]) {
                 found = true;
                 break;
             }
         }
         if (!found) {
             playerList->insertItem(playerList->count(),players[playerNum]);
+            playerList->item(playerList->count()-1)->setData(Qt::UserRole,players[playerNum]);
+            playerList->item(playerList->count()-1)->setData(Qt::DisplayRole,players[playerNum].split("\\").last());
+            wins->insertItem(wins->count(),"0");
+            losses->insertItem(losses->count(),"0");
+            ties->insertItem(ties->count(),"0");
             numTrialsLabel->setText("Number of trials: "+QString().setNum((playerList->count()) * (playerList->count()-1)));
             numTrialsInput->setText(QString().setNum((playerList->count()) * (playerList->count()-1)));
 
@@ -146,7 +209,15 @@ void Trainer::addPlayer(){
 
 }
 void Trainer::removePlayer(){
-    qDeleteAll(playerList->selectedItems());
+    QModelIndex modIndex;
+    int index;
+    foreach(modIndex, playerList->selectionModel()->selectedIndexes()){
+        index = modIndex.row();
+        playerList->model()->removeRow(index);
+        wins->model()->removeRow(index);
+        losses->model()->removeRow(index);
+        ties->model()->removeRow(index);
+    }
     numTrialsLabel->setText("Number of trials: "+QString().setNum((playerList->count()) * (playerList->count()-1)));
     numTrialsInput->setText(QString().setNum((playerList->count()) * (playerList->count()-1)));
 
@@ -338,7 +409,7 @@ QPair<QStringList,QStringList> Trainer::getFileNamesFromPlayerSelectors(bool isT
         i++;
         QString friendlyName;
         if(isTournamentMode){
-            QString playerListItem = playerList->item(index)->text();
+            QString playerListItem = playerList->item(index)->data(Qt::UserRole).toString();
             friendlyName = playerListItem.split("/").last();
             progName = playerListItem;
         }

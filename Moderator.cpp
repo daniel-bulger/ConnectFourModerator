@@ -1,9 +1,8 @@
 
 #include "Moderator.h"
-Moderator::Moderator(QWidget *parent)
-    : QMainWindow(parent)
+Moderator::Moderator()
 {
-    this->setVisible(false);
+    commandLine = false;
     gamestate = GAME_STOPPED;
     timer = new QTimer();
     timePerTurnTimer = new QTimer();
@@ -30,12 +29,20 @@ bool Moderator::playerMove(bool isPlayer1,int input){
     QPair<int,QPair<int,int> > playerOutput = currentGame.playMove(input);
     if(playerOutput.first==-1){
         if(isPlayer1){
-            if(player1->isManual) return false;
+            if(player1->isManual) {
+                console("INVALID");
+                writeLineToTerminal("INVALID");
+                return false;
+            }
             console("Player 1 placed a piece in an invalid location. ("+QString().setNum(input)+")");
             player2Wins(true);
         }
         else{
-            if(player2->isManual) return false;
+            if(player2->isManual) {
+                console("INVALID");
+                writeLineToTerminal("INVALID");
+                return false;
+            }
             console("Player 2 placed a piece in an invalid location. ("+QString().setNum(input)+")");
             player1Wins(true);
         }
@@ -72,10 +79,10 @@ void Moderator::lookForMove(){
         moveChars.append("\n");
         player1MadeAMove = false;
 
+        console(QString("Player 1's move: " + QString().setNum(move)));
         if(playerMove(true,move)==false){
             return;
         }
-        console(QString("Player 1's move: " + QString().setNum(move)));
         if(!player2->isManual){
             player2->write(moveChars.toStdString().c_str());
             player2->waitForBytesWritten();
@@ -95,12 +102,10 @@ void Moderator::lookForMove(){
         QString moveChars = QString().setNum(move);
         moveChars.append("\n");
         player2MadeAMove = false;
-
+        console(QString("Player 2's move: " + QString().setNum(move)));
         if(playerMove(false, move)==false){
             return;
         }
-        console(QString("Player 2's move: " + QString().setNum(move)));
-
         if(!player1->isManual){
             player1->write(moveChars.toStdString().c_str());
             player1->waitForBytesWritten();
@@ -123,6 +128,14 @@ void Moderator::playerHasMoved(bool isPlayer1){
         return;
     if(gamestate!=GAME_STOPPED){
         QString input = QString(player->readNewInput());
+        QTextStream qtin(stdin);
+        if(player->isManual && commandLine){
+            timer->stop();
+            timePerTurnTimer->stop();
+            qtin >> input;
+            timer->start(10);
+            timePerTurnTimer->start(10);
+        }
         if(input=="")
             return;
         if(isPlayer1)
@@ -158,7 +171,9 @@ void Moderator::player2DroppedPiece(int col){
 void Moderator::player1Wins(bool dueToError){
 
     console("PLAYER 1 WINS");
+
     if(dueToError){
+        writeLineToTerminal("PLAYER 1 WINS DUE TO PLAYER 2 ERROR");
         emit gameOver(-2);
         if(player1)
             player1->write("0\n");
@@ -166,6 +181,8 @@ void Moderator::player1Wins(bool dueToError){
             player2->write("0\n");
     }
     else{
+        writeLineToTerminal("PLAYER 1 WINS");
+
         emit gameOver(1);
         player1->write("-1\n");
         player2->write("-1\n");
@@ -174,7 +191,10 @@ void Moderator::player1Wins(bool dueToError){
 }
 void Moderator::player2Wins(bool dueToError){
     console("PLAYER 2 WINS");
+    writeLineToTerminal("PLAYER 2 WINS");
+
     if(dueToError){
+        writeLineToTerminal("PLAYER 2 WINS DUE TO PLAYER 1 ERROR");
         emit gameOver(-1);
         if(player1)
             player1->write("0\n");
@@ -182,6 +202,7 @@ void Moderator::player2Wins(bool dueToError){
             player2->write("0\n");
     }
     else{
+        writeLineToTerminal("PLAYER 2 WINS");
         emit gameOver(2);
         player1->write("-2\n");
         player2->write("-2\n");
@@ -191,6 +212,8 @@ void Moderator::player2Wins(bool dueToError){
 void Moderator::tieGame(){
     emit gameOver(0);
     console("TIE GAME");
+    writeLineToTerminal("TIE");
+
     player1->write("-3\n");
     player2->write("-3\n");
     endGame();
@@ -209,11 +232,16 @@ void Moderator::endGame(){
     if(moveString!=""){
         moveString +="\n";
         QString filePath = logFilePath;
-        filePath+= "/log.txt";
-        QFile file(filePath);
-        file.open(QIODevice::WriteOnly | QIODevice::Append);
-        file.write(QByteArray(moveString.toStdString().c_str()));
-        file.close();
+        if(!commandLine){
+            filePath+= "/log.txt";
+            QFile file(filePath);
+            file.open(QIODevice::WriteOnly | QIODevice::Append);
+            file.write(QByteArray(moveString.toStdString().c_str()));
+            file.close();
+        }
+        else{
+            exit(1);
+        }
     }
     if(player1)
         player1->deleteLater();
@@ -225,7 +253,8 @@ void Moderator::endGame(){
     emit gamestring(currentGame.getMoveString());
     emit gameHasEnded();
 }
-bool Moderator::startGame(QStringList player1FileName, QStringList player2FileName, QString logFolder, bool swapTurns){
+bool Moderator::startGame(QStringList player1FileName, QStringList player2FileName, QString logFolder, bool swapTurns, bool cmd){
+    commandLine = cmd;
     logFilePath = logFolder;
     if(startProgram(player1FileName,true)&&startProgram(player2FileName,false)){
         if(!player1||!player2)
@@ -432,7 +461,14 @@ void Moderator::alert(QString message){
 
 void Moderator::console(QString message){
     emit consoleOutput(message);
+
 }
+void Moderator::writeLineToTerminal(QString message){
+    if(commandLine){
+        std::cout << message.toStdString().c_str() << std::endl;
+    }
+}
+
 void Moderator::decrementTimePerTurnTimer(){
     timeUntilMove-=10;
     if(!player1||!player2)

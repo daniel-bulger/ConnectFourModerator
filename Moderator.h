@@ -7,16 +7,18 @@
 #include "Trainer.h"
 #include <QtGui>
 #include <QtCore>
+#include <stdio.h>
+#include <iostream>
 class Board;
 class Trainer;
 class ControlPanel; // forward declaration
-class Moderator : public QMainWindow
+class Moderator:public QObject
 {
     Q_OBJECT
 
 public:
     int getCurrentPlayer();
-    Moderator(QWidget *parent = 0);
+    Moderator();
     ~Moderator();
     ControlPanel* controlPanel;
     Game currentGame;
@@ -26,6 +28,7 @@ public:
     int plyr2Move;
     int timeUntilMove;
     int timePerMove;
+    bool commandLine;
     Player* player1;
     Player* player2;
     bool player1GoesFirst;
@@ -63,6 +66,7 @@ signals:
     void acceptManualInput();
     void gamestring(QString gamestring);
 public slots:
+    void writeLineToTerminal(QString message);
     void directoryTextBoxEdited();
     void decrementTimePerTurnTimer();
     void updateTimer();
@@ -73,7 +77,7 @@ public slots:
     void player2DroppedPiece(int col);
     void pauseGame();
     void resumeGame();
-    bool startGame(QStringList player1FileName, QStringList player2FileName, QString logFolder, bool swapTurns = true);
+    bool startGame(QStringList player1FileName, QStringList player2FileName, QString logFolder = "", bool swapTurns = true, bool cmd = false);
     void setTimeUntilMove(int msecs);
     bool startProgram(QStringList programName, bool isPlayer1);
 };
