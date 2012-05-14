@@ -14,7 +14,7 @@ public:
     QStringList args;
     Player();
     Player(const Player&);
-    Player(bool isPlayer1,QString progName, QStringList args = QStringList());
+    Player(bool isPlayer1,QString progName, QStringList args = QStringList(), int timeToRespond = 100);
     ~Player();
     void startManual();
     bool getQuestionMark();

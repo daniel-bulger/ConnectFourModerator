@@ -4,10 +4,11 @@ int Player::nextId = 0;
 Player::Player() {}
 Player::Player(const Player&) {}
 
-Player::Player(bool isPlayer1,QString progName, QStringList args):progName(progName),args(args)
+Player::Player(bool isPlayer1,QString progName, QStringList args,int timeToRespond):progName(progName),args(args)
 {
 
-    if(progName=="MANUAL_MODE"){
+    if((progName=="MANUAL_MODE") || ((progName == "" )&& (args[0]=="MANUAL_MODE"))){
+        qDebug() << "Manual mode engaged";
         isManual = true;
         startManual();
     }
@@ -38,7 +39,7 @@ Player::Player(bool isPlayer1,QString progName, QStringList args):progName(progN
             if (!waitForStarted()) {
                 throw false;
             }
-            sleep(100);
+            sleep(timeToRespond);
             if (readNewInput()=="p") {
             }
             else {
@@ -47,7 +48,7 @@ Player::Player(bool isPlayer1,QString progName, QStringList args):progName(progN
         }
 }
 Player::~Player(){
-    file->remove();
+    this->kill();
 }
 
 void Player::startManual(){
@@ -69,6 +70,8 @@ void Player::sleep(int mSecs){
 }
 
 bool Player::getQuestionMark(){
+    if(isManual)
+        return true;
     sleep(100);
     if(readNewInput() == "?"){
         return true;

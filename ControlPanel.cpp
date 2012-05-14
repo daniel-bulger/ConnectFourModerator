@@ -541,12 +541,12 @@ void ControlPanel::updateCurrentPlayerTimeRemainingSlider(){
     if(currentPlayer==1){
         this->player1TimeRemainingBar->setValue(player1TimeRemainingBar->value()-10);
         if((this->player1TimeRemainingBar->value()<=0)&&(timeLimitPreference))
-            parent->player2Wins();
+            parent->player2Wins(true);
     }
     if(currentPlayer==2){
         this->player2TimeRemainingBar->setValue(player2TimeRemainingBar->value()-10);
         if((this->player2TimeRemainingBar->value()<=0)&&(timeLimitPreference))
-            parent->player1Wins();
+            parent->player1Wins(true);
 
     }
 }

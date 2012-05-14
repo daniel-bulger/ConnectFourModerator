@@ -19,7 +19,18 @@ Moderator::~Moderator()
 {
 
 }
-
+#ifdef Q_OS_WIN
+#include <windows.h> // for Sleep
+#endif
+void Moderator::qSleep(int ms)
+{
+#ifdef Q_OS_WIN
+    Sleep(uint(ms));
+#else
+    struct timespec ts = { ms / 1000, (ms % 1000) * 1000 * 1000 };
+    nanosleep(&ts, NULL);
+#endif
+}
 
 void Moderator::directoryTextBoxEdited(){
 
@@ -57,10 +68,14 @@ bool Moderator::playerMove(bool isPlayer1,int input){
 
     if(playerOutput.first==0){
         if(isPlayer1){
-            player1Wins();
+            if(commandLine)
+                writeLineToTerminal("PLAYER1MOVE"+QString().setNum(playerOutput.second.first)+QString().setNum(playerOutput.second.second));
+            player1Wins(false);
         }
         else{
-            player2Wins();
+            if(commandLine)
+                writeLineToTerminal("PLAYER2MOVE"+QString().setNum(playerOutput.second.first)+QString().setNum(playerOutput.second.second));
+            player2Wins(false);
         }
         retVal = false;
     }
@@ -83,6 +98,8 @@ void Moderator::lookForMove(){
         if(playerMove(true,move)==false){
             return;
         }
+        writeLineToTerminal("PLAYER1MOVE"+QString().setNum(move)+QString().setNum(currentGame.getColFill(move-1)));  // 1 has already been added to colfill
+
         if(!player2->isManual){
             player2->write(moveChars.toStdString().c_str());
             player2->waitForBytesWritten();
@@ -103,9 +120,12 @@ void Moderator::lookForMove(){
         moveChars.append("\n");
         player2MadeAMove = false;
         console(QString("Player 2's move: " + QString().setNum(move)));
+
         if(playerMove(false, move)==false){
             return;
         }
+        writeLineToTerminal("PLAYER2MOVE"+QString().setNum(move)+QString().setNum(currentGame.getColFill(move-1)));
+
         if(!player1->isManual){
             player1->write(moveChars.toStdString().c_str());
             player1->waitForBytesWritten();
@@ -136,6 +156,14 @@ void Moderator::playerHasMoved(bool isPlayer1){
             timer->start(10);
             timePerTurnTimer->start(10);
         }
+        if((!player->isManual)&&player->state()==QProcess::NotRunning){
+            if(isPlayer1)
+                player2Wins(true);
+            else
+                player1Wins(true);
+            return;
+        }
+
         if(input=="")
             return;
         if(isPlayer1)
@@ -171,7 +199,8 @@ void Moderator::player2DroppedPiece(int col){
 void Moderator::player1Wins(bool dueToError){
 
     console("PLAYER 1 WINS");
-
+    if(commandLine)
+        qSleep(1000);
     if(dueToError){
         writeLineToTerminal("PLAYER 1 WINS DUE TO PLAYER 2 ERROR");
         emit gameOver(-2);
@@ -191,8 +220,8 @@ void Moderator::player1Wins(bool dueToError){
 }
 void Moderator::player2Wins(bool dueToError){
     console("PLAYER 2 WINS");
-    writeLineToTerminal("PLAYER 2 WINS");
-
+    if(commandLine)
+        qSleep(1000);
     if(dueToError){
         writeLineToTerminal("PLAYER 2 WINS DUE TO PLAYER 1 ERROR");
         emit gameOver(-1);
@@ -210,6 +239,8 @@ void Moderator::player2Wins(bool dueToError){
     endGame();
 }
 void Moderator::tieGame(){
+    if(commandLine)
+        qSleep(1000);
     emit gameOver(0);
     console("TIE GAME");
     writeLineToTerminal("TIE");
@@ -253,10 +284,10 @@ void Moderator::endGame(){
     emit gamestring(currentGame.getMoveString());
     emit gameHasEnded();
 }
-bool Moderator::startGame(QStringList player1FileName, QStringList player2FileName, QString logFolder, bool swapTurns, bool cmd){
+bool Moderator::startGame(QStringList player1FileName, QStringList player2FileName, QString logFolder, bool swapTurns, bool cmd, int timeToRespond){
     commandLine = cmd;
     logFilePath = logFolder;
-    if(startProgram(player1FileName,true)&&startProgram(player2FileName,false)){
+    if(startProgram(player1FileName,true, timeToRespond)&&startProgram(player2FileName,false,timeToRespond)){
         if(!player1||!player2)
             return false;
         if (player1GoesFirst || (!swapTurns)) {
@@ -359,16 +390,16 @@ void Moderator::resumeGame(){
         gamestate = PLAYER_2_TO_MOVE;
     }
 }
-bool Moderator::testProgram(QString progName, QStringList args){
+bool Moderator::testProgram(QString progName, QStringList args, int timeToRespond){
     Player* player = NULL;
     try{
-        player = new Player(true,progName,args);
+        player = new Player(true,progName,args, timeToRespond);
     }
     catch(bool){
         delete player;
         if(progName.endsWith(".exe")){
             try{
-                player = new Player(true,"wine",QStringList(progName));
+                player = new Player(true,"wine",QStringList(progName),timeToRespond);
             }
             catch(bool){
                 delete player;
@@ -382,16 +413,16 @@ bool Moderator::testProgram(QString progName, QStringList args){
     }
     player->write("2\n");
     if(player->getQuestionMark()){
-        player->deleteLater();
+        delete player;
         return true;
     }
     else{
-        player->deleteLater();
+        delete player;
         return false;
     }
 }
 
-bool Moderator::startProgram(QStringList programName, bool isPlayer1){
+bool Moderator::startProgram(QStringList programName, bool isPlayer1, int timeToRespond){
     QString progName = QString("");
     if(!programName.isEmpty())
      progName= programName.first();
@@ -418,7 +449,7 @@ bool Moderator::startProgram(QStringList programName, bool isPlayer1){
         }
     }
     try{
-        player = new Player(isPlayer1,progName,args);
+        player = new Player(isPlayer1,progName,args, timeToRespond);
         if(isPlayer1){
             player1 = player;
         }
@@ -429,7 +460,7 @@ bool Moderator::startProgram(QStringList programName, bool isPlayer1){
     catch(bool){
         if(progName.endsWith(".exe")){
             try{
-                player = new Player(isPlayer1,"wine",QStringList(progName));
+                player = new Player(isPlayer1,"wine",QStringList(progName),timeToRespond);
                 if(isPlayer1){
                     player1 = player;
                 }
@@ -438,11 +469,13 @@ bool Moderator::startProgram(QStringList programName, bool isPlayer1){
                 }
             }
             catch(bool){
+                delete player;
             emit loadFailed(progName);
             return false;
             }
         }
         else{
+                delete player;
             emit loadFailed(progName);
             return false;
         }

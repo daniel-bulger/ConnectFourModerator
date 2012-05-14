@@ -24,6 +24,8 @@ public:
     Game currentGame;
     enum gamestates{GAME_STOPPED,PLAYER_1_TO_MOVE,PLAYER_2_TO_MOVE,PLAYER_1_QUESTION_MARK,PLAYER_2_QUESTION_MARK,GAME_PAUSED_PLAYER_1_TO_MOVE,GAME_PAUSED_PLAYER_2_TO_MOVE};
     int gamestate;
+    void qSleep(int ms);
+
     int plyr1Move;
     int plyr2Move;
     int timeUntilMove;
@@ -47,7 +49,7 @@ public:
     void player1Wins(bool dueToError = false);
     void player2Wins(bool dueToError = false);
     void tieGame();
-    bool testProgram(QString progName, QStringList args = QStringList());
+    bool testProgram(QString progName, QStringList args = QStringList(), int timeToRespond = 100);
 
     static const int MOVE_TIME_LIMIT = 10;
 private:
@@ -77,9 +79,9 @@ public slots:
     void player2DroppedPiece(int col);
     void pauseGame();
     void resumeGame();
-    bool startGame(QStringList player1FileName, QStringList player2FileName, QString logFolder = "", bool swapTurns = true, bool cmd = false);
+    bool startGame(QStringList player1FileName, QStringList player2FileName, QString logFolder = "", bool swapTurns = true, bool cmd = false, int timeToRespond = 100);
     void setTimeUntilMove(int msecs);
-    bool startProgram(QStringList programName, bool isPlayer1);
+    bool startProgram(QStringList programName, bool isPlayer1, int timeToRespond = 100);
 };
 
 #endif

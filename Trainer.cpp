@@ -357,6 +357,8 @@ void Trainer::populateComboBoxes(){
     }
 }
 void Trainer::goButtonPressed(){
+    player1PullIndex = 0;
+    player2PullIndex = 1;
     qDebug() << "Go button pressed";
     if(gamesRunning==false){
         qDebug() << "GO!";
