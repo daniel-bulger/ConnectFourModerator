@@ -91,7 +91,6 @@ bool Player::getQuestionMark(){
 }
 QString Player::readNewInput(){
     if(isManual){
-        qDebug() << "Reading manual program input";
         return "";
     }
     if(!file->open(QIODevice::ReadOnly)){
@@ -100,8 +99,8 @@ QString Player::readNewInput(){
     QString newInput = QString(file->readAll());
     int oldLen = oldOutput.length();
     oldOutput = newInput;
-    if(newInput.endsWith("\n")){
-        newInput.chop(2);
+    if(newInput.endsWith('\n')){
+        newInput.chop(1); // \n is a character
     }
     QString ret = newInput.remove(0,oldLen);
     file->close();
