@@ -540,13 +540,17 @@ void ControlPanel::updateCurrentPlayerTimeRemainingSlider(){
     int currentPlayer = parent->getCurrentPlayer();
     if(currentPlayer==1){
         this->player1TimeRemainingBar->setValue(player1TimeRemainingBar->value()-10);
-        if((this->player1TimeRemainingBar->value()<=0)&&(timeLimitPreference))
+        if((this->player1TimeRemainingBar->value()<=0)&&(timeLimitPreference->isChecked())){
+            console("Player 1 did not make a move within 10 seconds, so Player 2 wins!");
             parent->player2Wins(true);
+        }
     }
     if(currentPlayer==2){
         this->player2TimeRemainingBar->setValue(player2TimeRemainingBar->value()-10);
-        if((this->player2TimeRemainingBar->value()<=0)&&(timeLimitPreference))
+        if((this->player2TimeRemainingBar->value()<=0)&&(timeLimitPreference->isChecked())){
+            console("Player 2 did not make a move within 10 seconds, so Player 1 wins!");
             parent->player1Wins(true);
+        }
 
     }
 }
