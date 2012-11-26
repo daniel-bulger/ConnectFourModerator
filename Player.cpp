@@ -33,16 +33,25 @@ Player::Player(bool isPlayer1,QString progName, QStringList args,int timeToRespo
             this->setStandardOutputFile(fileName,QIODevice::Truncate);
         }
         oldOutput = "";
+        qDebug() << args;
         if(args==QStringList()) start(progName,QStringList());
         else start(progName,args);
 
             if (!waitForStarted()) {
+                qDebug("Program did not start");
+                qDebug() << progName;
+                if(args!=QStringList()){
+                    qDebug() << args;
+                }
                 throw false;
             }
             sleep(timeToRespond);
-            if (readNewInput()=="p") {
+            QString newInput = readNewInput();
+            qDebug() << newInput;
+            if (newInput=="p") {
             }
             else {
+                qDebug("Program did not output a 'p'");
                 throw false;
             }
         }
@@ -81,7 +90,10 @@ bool Player::getQuestionMark(){
     }
 }
 QString Player::readNewInput(){
-    if(isManual) return "";
+    if(isManual){
+        qDebug() << "Reading manual program input";
+        return "";
+    }
     if(!file->open(QIODevice::ReadOnly)){
         qDebug("Failed to open file");
     }

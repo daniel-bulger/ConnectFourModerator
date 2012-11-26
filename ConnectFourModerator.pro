@@ -11,6 +11,8 @@ TEMPLATE = app
 RESOURCES = resources.qrc
 RC_FILE = icon.rc
 ICON = icon.icns
+CONFIG   += console
+
 
 SOURCES += main.cpp\
     Board.cpp \
