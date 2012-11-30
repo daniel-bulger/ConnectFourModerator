@@ -22,7 +22,7 @@ Board::Board(ControlPanel *parent) :parent(parent),
     this->setStyleSheet( "QGraphicsView { border-style: none; background: transparent; }" );
 
     // Resize!
-    this->show(); // for some reason, this makes the board appear in Ubuntu
+    //this->show(); // for some reason, this makes the board appear in Ubuntu
     int width = QApplication::desktop()->width();
     int height = QApplication::desktop()->height();
     if((width * 1574 / 1260) > (height)){
