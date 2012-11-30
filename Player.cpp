@@ -7,7 +7,7 @@ Player::Player(const Player&) {}
 Player::Player(bool isPlayer1,QString progName, QStringList args,int timeToRespond):progName(progName),args(args)
 {
 
-    if((progName=="MANUAL_MODE") || ((progName == "" )&& (args[0]=="MANUAL_MODE"))){
+    if((progName=="MANUAL_MODE") || ((progName == "" )&& args.length() == 1 && (args[0]=="MANUAL_MODE"))){
         qDebug() << "Manual mode engaged";
         isManual = true;
         startManual();
@@ -15,23 +15,6 @@ Player::Player(bool isPlayer1,QString progName, QStringList args,int timeToRespo
     else{
         //parsePath();
         isManual = false;
-        if(isPlayer1){
-            // TODO figure out where to put these
-            QString fileName = "./player1";
-            //fileName+=QString().setNum(this->getNextId()+QDateTime::currentMSecsSinceEpoch());
-            fileName+=".txt";
-            file = new QFile(fileName);
-            file->remove();
-            this->setStandardOutputFile(fileName,QIODevice::Truncate);
-        }
-        else{
-            QString fileName = "./player2";
-            //fileName+=QString().setNum(this->getNextId()+QDateTime::currentMSecsSinceEpoch());
-            fileName+=".txt";
-            file = new QFile(fileName);
-            file->remove();
-            this->setStandardOutputFile(fileName,QIODevice::Truncate);
-        }
         oldOutput = "";
         qDebug() << args;
         if(args==QStringList()) start(progName,QStringList());
@@ -46,7 +29,8 @@ Player::Player(bool isPlayer1,QString progName, QStringList args,int timeToRespo
                 throw false;
             }
             sleep(timeToRespond);
-            QString newInput = readNewInput();
+            waitForBytesWritten();
+            QString newInput = this->readNewInput();
             qDebug() << newInput;
             if (newInput=="p") {
             }
@@ -93,17 +77,9 @@ QString Player::readNewInput(){
     if(isManual){
         return "";
     }
-    if(!file->open(QIODevice::ReadOnly)){
-        qDebug("Failed to open file");
-    }
-    QString newInput = QString(file->readAll());
-    int oldLen = oldOutput.length();
-    oldOutput = newInput;
-    if(newInput.endsWith('\n')){
-        newInput.chop(1); // \n is a character
-    }
-    QString ret = newInput.remove(0,oldLen);
-    file->close();
+    QString newInput = QString(readAllStandardOutput());
+    newInput.remove('\n');
+    QString ret = newInput;
     return ret;
 
 }
