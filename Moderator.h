@@ -50,7 +50,7 @@ public:
     void player2Wins(bool dueToError = false);
     void tieGame();
     bool testProgram(QString progName, QStringList args = QStringList(), int timeToRespond = 100);
-
+    bool initializeProgram(Player* &player, QString progName, QStringList args = QStringList(), int timeToRespond = 100);
     static const int MOVE_TIME_LIMIT = 10;
 private:
     int timeRemaining;

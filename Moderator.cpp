@@ -390,8 +390,9 @@ void Moderator::resumeGame(){
         gamestate = PLAYER_2_TO_MOVE;
     }
 }
-bool Moderator::testProgram(QString progName, QStringList args, int timeToRespond){
-    Player* player = NULL;
+bool Moderator::initializeProgram(Player* &player, QString progName, QStringList args, int timeToRespond){
+    QStringList fullProgram = args;
+    fullProgram.prepend(progName);
     try{
         player = new Player(true,progName,args, timeToRespond);
     }
@@ -399,17 +400,27 @@ bool Moderator::testProgram(QString progName, QStringList args, int timeToRespon
         delete player;
         if(progName.endsWith(".exe")){
             try{
-                player = new Player(true,"wine",QStringList(progName),timeToRespond);
+                player = new Player(true,"wine",QStringList(fullProgram),timeToRespond);
             }
             catch(bool){
                 delete player;
-                qDebug("Python player failed to load");
                 return false;
             }
         }
         else if(progName.endsWith(".py")){
             try{
-                player = new Player(true,"python",QStringList(progName),timeToRespond);
+                player = new Player(true,"python",QStringList(fullProgram),timeToRespond);
+            }
+            catch(bool){
+                delete player;
+                return false;
+            }
+        }
+        else if(progName.endsWith(".jar")){
+            try{
+                QStringList fullProgramWithJarFlag = fullProgram;
+                fullProgramWithJarFlag.prepend("-jar");
+                player = new Player(true,"java",QStringList(fullProgramWithJarFlag),500);
             }
             catch(bool){
                 delete player;
@@ -420,6 +431,15 @@ bool Moderator::testProgram(QString progName, QStringList args, int timeToRespon
             delete player;
             return false;
         }
+    }
+    return true;
+}
+
+bool Moderator::testProgram(QString progName, QStringList args, int timeToRespond){
+    Player* player = NULL;
+    // attempt to initialize the program.  If it does not init, return false
+    if(!initializeProgram(player, progName, args, timeToRespond)){
+        return false;
     }
     player->write("2\n");
     if(player->getQuestionMark()){
@@ -439,7 +459,7 @@ bool Moderator::startProgram(QStringList programName, bool isPlayer1, int timeTo
     QStringList args = programName;
     if(!args.isEmpty())
         args.removeFirst();
-    qDebug() << progName;
+    console(progName);
     Player* player;
     if(isPlayer1){
         player = player1;
@@ -459,56 +479,15 @@ bool Moderator::startProgram(QStringList programName, bool isPlayer1, int timeTo
             player2 = NULL;
         }
     }
-    try{
-        player = new Player(isPlayer1,progName,args, timeToRespond);
-        if(isPlayer1){
-            player1 = player;
-        }
-        else{
-            player2 = player;
-        }
+    // attempt to initialize the program.  If it does not init, return false
+    if(!initializeProgram(player, progName, args, timeToRespond)){
+        return false;
     }
-    catch(bool){
-        if(progName.endsWith(".exe")){
-            try{
-                player = new Player(isPlayer1,"wine",programName,timeToRespond);
-                if(isPlayer1){
-                    player1 = player;
-                }
-                else{
-                    player2 = player;
-                }
-            }
-            catch(bool){
-                delete player;
-                emit loadFailed(progName);
-                return false;
-            }
-        }
-        else if(progName.endsWith(".py")){
-            qDebug() << "PYTHON PROGRAM LOAD";
-            try{
-                //programName.prepend("-u");
-                player = new Player(isPlayer1,"python",programName,500);
-                if(isPlayer1){
-                    player1 = player;
-                }
-                else{
-                    player2 = player;
-                }
-            }
-            catch(bool){
-                qDebug() << "PYTHON PROGRAM FAILED TO LOAD";
-                delete player;
-                emit loadFailed(progName);
-                return false;
-            }
-        }
-        else{
-            delete player;
-            emit loadFailed(progName);
-            return false;
-        }
+    if(isPlayer1){
+        player1 = player;
+    }
+    else{
+        player2 = player;
     }
     emit loadSuccess(programName);
     return true;
