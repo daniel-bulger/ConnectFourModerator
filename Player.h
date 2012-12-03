@@ -12,6 +12,7 @@ public:
     QFile* file;
     QString progName;
     QStringList args;
+    int timeToRespond;
     Player();
     Player(const Player&);
     Player(bool isPlayer1,QString progName, QStringList args = QStringList(), int timeToRespond = 100);

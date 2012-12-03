@@ -4,7 +4,7 @@ int Player::nextId = 0;
 Player::Player() {}
 Player::Player(const Player&) {}
 
-Player::Player(bool isPlayer1,QString progName, QStringList args,int timeToRespond):progName(progName),args(args)
+Player::Player(bool isPlayer1,QString progName, QStringList args,int timeToRespond):progName(progName),args(args),timeToRespond(timeToRespond)
 {
 
     if((progName=="MANUAL_MODE") || ((progName == "" )&& args.length() == 1 && (args[0]=="MANUAL_MODE"))){
@@ -13,18 +13,16 @@ Player::Player(bool isPlayer1,QString progName, QStringList args,int timeToRespo
         startManual();
     }
     else{
-        //parsePath();
         isManual = false;
         oldOutput = "";
-        qDebug() << args;
         if(args==QStringList()) start(progName,QStringList());
         else start(progName,args);
 
             if (!waitForStarted()) {
-                qDebug("Program did not start");
-                qDebug() << progName;
+                //qDebug("Program did not start");
+                //qDebug() << progName;
                 if(args!=QStringList()){
-                    qDebug() << args;
+                    //qDebug() << args;
                 }
                 throw false;
             }
@@ -35,7 +33,7 @@ Player::Player(bool isPlayer1,QString progName, QStringList args,int timeToRespo
             if (newInput=="p") {
             }
             else {
-                qDebug("Program did not output a 'p'");
+                //qDebug("Program did not output a 'p'");
                 throw false;
             }
         }
@@ -65,7 +63,8 @@ void Player::sleep(int mSecs){
 bool Player::getQuestionMark(){
     if(isManual)
         return true;
-    sleep(100);
+    sleep(timeToRespond);
+    waitForReadyRead(timeToRespond);
     if(readNewInput() == "?"){
         return true;
     }
@@ -79,6 +78,7 @@ QString Player::readNewInput(){
     }
     QString newInput = QString(readAllStandardOutput());
     newInput.remove('\n');
+    newInput.remove('\r');
     QString ret = newInput;
     return ret;
 
