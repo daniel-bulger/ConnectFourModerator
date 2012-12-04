@@ -20,9 +20,12 @@ int main(int argc, char *argv[])
         QStringList player2FileNameOrig = QStringList(QString(a.arguments().at(2)));
         QStringList player1FileName = player1FileNameOrig;
         QStringList player2FileName = player2FileNameOrig;
-        int timeToRespond = 300;
+        int timeToRespond = 500;
         if(a.arguments().size()>3)
             timeToRespond = a.arguments().at(3).toInt();
+        if(timeToRespond < 500){
+            timeToRespond = 500;
+        }
         QString player1FileBegin;
         if(player1FileName.length()>0){
         player1FileBegin= player1FileName.first();
