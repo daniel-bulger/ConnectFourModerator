@@ -225,9 +225,12 @@ void Moderator::playerWins(bool isPlayer1, bool dueToError, bool tookTooLong){
         else{
             if(isPlayer1){
                 writeLineToTerminal("PLAYER 1 WINS DUE TO PLAYER 2 ERROR");
+                emit gameOver(-2);
             }
             else{
                 writeLineToTerminal("PLAYER 2 WINS DUE TO PLAYER 1 ERROR");
+                emit gameOver(-1);
+
             }
         }
         if(player1)
