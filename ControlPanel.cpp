@@ -317,21 +317,6 @@ void ControlPanel::populateComboBox(bool isPlayer1){
         }
     }
 }
-
-void ControlPanel::player1Debug(){
-    QString input = parent->player1->readAllStandardError();
-    if(input!=""){
-        input = "Player 1 says: " + input;
-        console(input);
-    }
-}
-void ControlPanel::player2Debug(){
-    QString input = parent->player2->readAllStandardError();
-    if(input!=""){
-        input = "Player 2 says: " + input;
-        console(input);
-    }
-}
 void ControlPanel::goButtonPressed(){
     go->setEnabled(false);
     if(parent->gamestate==GAME_STOPPED){

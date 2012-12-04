@@ -485,14 +485,30 @@ bool Moderator::startProgram(QStringList programName, bool isPlayer1, int timeTo
     }
     if(isPlayer1){
         player1 = player;
+        connect(player1,SIGNAL(readyReadStandardError()),SLOT(player1Debug()));
     }
     else{
         player2 = player;
+        connect(player2,SIGNAL(readyReadStandardError()),SLOT(player2Debug()));
+
     }
     emit loadSuccess(programName);
     return true;
 }
-
+void Moderator::player1Debug(){
+    QString input = player1->readAllStandardError();
+    if(input!=""){
+        input = "Player 1 says: " + input;
+        console(input);
+    }
+}
+void Moderator::player2Debug(){
+    QString input = player2->readAllStandardError();
+    if(input!=""){
+        input = "Player 2 says: " + input;
+        console(input);
+    }
+}
 void Moderator::alert(QString message){
     QMessageBox myBox;
     myBox.setText(message);

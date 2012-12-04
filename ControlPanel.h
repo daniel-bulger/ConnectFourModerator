@@ -118,8 +118,6 @@ public:
     void chooseAIsToTrain();
     void runMassTrials();
     void chooseBoardColors();
-    void player1Debug();
-    void player2Debug();
     void populateComboBoxes();
     void populateComboBox(bool isPlayer1);
     void moveToStartingLocation();
