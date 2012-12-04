@@ -46,8 +46,9 @@ public:
     void console(QString message);
     void endGame();
     void resetGoButton();
-    void player1Wins(bool dueToError = false);
-    void player2Wins(bool dueToError = false);
+    void playerWins(bool isPlayer1 = true, bool dueToError = false, bool tookTooLong = false);
+    void player1Wins(bool dueToError = false, bool tookTooLong = false);
+    void player2Wins(bool dueToError = false, bool tookTooLong = false);
     void tieGame();
     bool testProgram(QString progName, QStringList args = QStringList(), int timeToRespond = 100);
     bool initializeProgram(Player* &player, QString progName, QStringList args = QStringList(), int timeToRespond = 100);

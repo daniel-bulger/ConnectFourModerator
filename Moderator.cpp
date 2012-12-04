@@ -5,6 +5,7 @@ Moderator::Moderator()
     commandLine = false;
     gamestate = GAME_STOPPED;
     timer = new QTimer();
+    connect(timer,SIGNAL(timeout()),SLOT(updateTimer()));
     timePerTurnTimer = new QTimer();
     connect(this->timePerTurnTimer,SIGNAL(timeout()),this,SLOT(decrementTimePerTurnTimer()));
     timePerMove = 10000;
@@ -196,48 +197,61 @@ void Moderator::player2DroppedPiece(int col){
     }
 }
 
-void Moderator::player1Wins(bool dueToError){
+void Moderator::player1Wins(bool dueToError, bool tookTooLong){
+    playerWins(true,dueToError,tookTooLong);
+}
+void Moderator::player2Wins(bool dueToError, bool tookTooLong){
+    playerWins(false,dueToError,tookTooLong);
+}
+void Moderator::playerWins(bool isPlayer1, bool dueToError, bool tookTooLong){
 
-    console("PLAYER 1 WINS");
+    if(isPlayer1)
+        console("PLAYER 1 WINS");
+    else
+        console("PLAYER 2 WINS");
     if(commandLine)
         qSleep(1000);
     if(dueToError){
-        writeLineToTerminal("PLAYER 1 WINS DUE TO PLAYER 2 ERROR");
-        emit gameOver(-2);
+        if(tookTooLong){
+            if(isPlayer1){
+                writeLineToTerminal("PLAYER 1 WINS BECAUSE PLAYER 2 TOOK TOO LONG");
+                emit gameOver(-2);
+            }
+            else{
+                writeLineToTerminal("PLAYER 2 WINS BECAUSE PLAYER 1 TOOK TOO LONG");
+                emit gameOver(-1);
+            }
+        }
+        else{
+            if(isPlayer1){
+                writeLineToTerminal("PLAYER 1 WINS DUE TO PLAYER 2 ERROR");
+            }
+            else{
+                writeLineToTerminal("PLAYER 2 WINS DUE TO PLAYER 1 ERROR");
+            }
+        }
         if(player1)
             player1->write("0\n");
         if(player2)
             player2->write("0\n");
     }
     else{
-        writeLineToTerminal("PLAYER 1 WINS");
+        if(isPlayer1){
+            writeLineToTerminal("PLAYER 1 WINS");
+            emit gameOver(1);
+            player1->write("-1\n");
+            player2->write("-1\n");
+        }
+        else{
+            writeLineToTerminal("PLAYER 2 WINS");
+            emit gameOver(2);
+            player1->write("-2\n");
+            player2->write("-2\n");
+        }
+    }
+    endGame();
+}
 
-        emit gameOver(1);
-        player1->write("-1\n");
-        player2->write("-1\n");
-    }
-    endGame();
-}
-void Moderator::player2Wins(bool dueToError){
-    console("PLAYER 2 WINS");
-    if(commandLine)
-        qSleep(1000);
-    if(dueToError){
-        writeLineToTerminal("PLAYER 2 WINS DUE TO PLAYER 1 ERROR");
-        emit gameOver(-1);
-        if(player1)
-            player1->write("0\n");
-        if(player2)
-            player2->write("0\n");
-    }
-    else{
-        writeLineToTerminal("PLAYER 2 WINS");
-        emit gameOver(2);
-        player1->write("-2\n");
-        player2->write("-2\n");
-    }
-    endGame();
-}
 void Moderator::tieGame(){
     if(commandLine)
         qSleep(1000);
@@ -539,12 +553,12 @@ void Moderator::decrementTimePerTurnTimer(){
 
 void Moderator::updateTimer()
 {
-    if (gamestate==PLAYER_1_TO_MOVE) {
+    if (gamestate==PLAYER_1_TO_MOVE && !player1->isManual) {
         this->timeRemaining-=10;
-        if(timeRemaining<=0) player2Wins();
-    } else if (gamestate==PLAYER_2_TO_MOVE) {
+        if(timeRemaining<=0) player2Wins(true, true);
+    } else if (gamestate==PLAYER_2_TO_MOVE && !player2->isManual) {
         this->timeRemaining-=10;
-        if(timeRemaining<=0) player1Wins();
+        if(timeRemaining<=0) player1Wins(true, true);
     }
 }
 int Moderator::getCurrentPlayer(){
