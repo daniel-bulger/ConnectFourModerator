@@ -19,11 +19,15 @@ ControlPanel::ControlPanel()
     preferencesMenu = menuBar->addMenu("Preferences");
     boardBackgroundPreference = preferencesMenu->addAction("Board background");
     boardBackgroundPreference->setCheckable(true);
+
     boardRed = settings->value("boardred").toInt();
     boardGreen = settings->value("boardgreen").toInt();
     boardBlue = settings->value("boardblue").toInt();
     connect(boardBackgroundPreference,SIGNAL(toggled(bool)),this,SLOT(boardBackChanged(bool)));
     boardBackgroundPreference->setChecked(settings->value("boardback").toBool());
+#ifdef Q_OS_LINUX
+    boardBackgroundPreference->setChecked(true); // linux seems to freak out when we have a translucent window, so just default to having a back
+#endif
     boardBackgroundColor = preferencesMenu->addAction(("Background color..."));
     connect(boardBackgroundColor,SIGNAL(triggered()),this,SLOT(chooseBoardColors()));
     boardSizeSubmenu = preferencesMenu->addMenu("Board size");
@@ -238,12 +242,12 @@ void ControlPanel::mousePressEvent(QMouseEvent *){
 void ControlPanel::onApplicationFocusChanged(QWidget* from, QWidget* to){
     if (from == 0 && isAncestorOf(to) == true){
         if((gameBoard)!=NULL){
-            gameBoard->setWindowState(Qt::WindowActive);
+            //gameBoard->setWindowState(Qt::WindowActive);
         }
     }
     else if (isAncestorOf(from) == true && to == 0){
         if((gameBoard)!=NULL){
-            gameBoard->setWindowState(Qt::WindowMinimized);
+            //gameBoard->setWindowState(Qt::WindowMinimized);
         }
     }
 }

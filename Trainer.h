@@ -7,7 +7,25 @@
 #include "Tournament.h"
 #include <QtGui>
 #include <QtCore>
-#include <QMainWindow>
+#include <QtWidgets/QMainWindow>
+#include <QtWidgets/QSlider>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QListWidget>
+#include <QtWidgets/QComboBox>
+#include <QtWidgets/QSpinBox>
+#include <QtWidgets/QProgressBar>
+#include <QtWidgets/QTextEdit>
+#include <QtWidgets/QActionGroup>
+
+
+
+
+
+
+
 class ControlPanel;
 class Trainer : public QWidget
 {

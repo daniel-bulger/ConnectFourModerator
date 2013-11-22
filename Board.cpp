@@ -1,6 +1,9 @@
 #include "Board.h"
 #include "Moderator.h"
 #include <QtGui>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QDesktopWidget>
+
 
 Board::Board(ControlPanel *parent) :parent(parent),
     QGraphicsView()
@@ -22,7 +25,6 @@ Board::Board(ControlPanel *parent) :parent(parent),
     this->setStyleSheet( "QGraphicsView { border-style: none; background: transparent; }" );
 
     // Resize!
-    //this->show(); // for some reason, this makes the board appear in Ubuntu
     int width = QApplication::desktop()->width();
     int height = QApplication::desktop()->height();
     if((width * 1574 / 1260) > (height)){
@@ -49,7 +51,6 @@ Board::Board(ControlPanel *parent) :parent(parent),
     QPixmap scaledHighlightImage = highlightImage->scaled(this->size(), Qt::KeepAspectRatio);
     highlightGraphic = new QGraphicsPixmapItem(scaledHighlightImage);
     board = new QGraphicsPixmapItem(scaledBoardImage);
-    board->setAcceptsHoverEvents(true);
     board->setAcceptHoverEvents(true);
     scene->installEventFilter(this);
     scene->addItem(highlightGraphic);
@@ -68,6 +69,7 @@ Board::Board(ControlPanel *parent) :parent(parent),
     currentPlayer = 2;
     playerGoesFirst = 2;
     currentPiece = new Piece(currentPlayer, this);
+    this->startTimer(1000 / 30);
 }
 float Board::OFFSET_LEFT(){return (-1.5/1574.0)*(originalWidth);}
 float Board::COL_WIDTH(){return float((169.0/1574.0)*(originalWidth));}
@@ -75,6 +77,11 @@ float Board::COL_HEIGHT(){return COL_WIDTH();}
 float Board::H_SPACING(){return float((40.6/1574)*(originalWidth));}
 float Board::V_SPACING(){return float((21.0/1260.0)*(originalHeight));}
 float Board::OFFSET_BOTTOM(){return float((68.0/1260)*(originalHeight));}
+
+void Board::timerEvent(QTimerEvent * te)
+{
+    //this->update();
+}
 
 void Board::place(int col, int row)
 {
@@ -90,8 +97,8 @@ void Board::place(int col, int row)
     animation->setStartValue(QPointF(currentPiece->x(), 0));
     animation->setEndValue(QPointF(currentPiece->x(), destination));
     animation->setEasingCurve(QEasingCurve::OutBounce);
-    animation->start();
     scene->addItem(currentPiece);
+    animation->start();
 
     // Switch the current players
     if (currentPlayer == 1) currentPlayer = 2;

@@ -1,8 +1,8 @@
 #ifndef PIECE_H
 #define PIECE_H
 
-#include <QGraphicsObject>
-#include <QGraphicsView>
+#include <QtWidgets/QGraphicsObject>
+#include <QtWidgets/QGraphicsView>
 #include "Board.h"
 class Board;
 class Piece : public QGraphicsObject
