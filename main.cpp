@@ -2,7 +2,7 @@
 #include <QTimer>
 
 #include <QtGui>
-#include <QtCore/QCoreApplication>
+#include <QtWidgets/QApplication>
 #include <stdio.h>
 #include "Moderator.h"
 #include "ControlPanel.h"

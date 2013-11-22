@@ -8,7 +8,23 @@
 #include "Player.h"
 #include <QtGui>
 #include <QtCore>
-#include <QMainWindow>
+#include <QtWidgets/QMainWindow>
+#include <QtWidgets/QMenuBar>
+#include <QtWidgets/QMenu>
+#include <QtWidgets/QLineEdit>
+#include <QtConcurrent/QtConcurrent>
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QColorDialog>
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QDesktopWidget>
+#include <QtWidgets/QTextBrowser>
+#include <QtWidgets/QScrollBar>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QInputDialog>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QComboBox>
+#include <QtWidgets/QProgressBar>
+#include <QtWidgets/QSlider>
 class Moderator;  // forward declaration
 class Trainer;
 class ControlPanel : public QWidget
