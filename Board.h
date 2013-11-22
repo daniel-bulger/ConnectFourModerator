@@ -13,7 +13,6 @@ class Board : public QGraphicsView
     Q_OBJECT
 public:
     explicit Board(ControlPanel *parent = 0);
-    void timerEvent(QTimerEvent*);
     void clearPieces();
     void place(int row, int col);
     void resizeBoard(int width);

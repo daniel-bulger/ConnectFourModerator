@@ -69,7 +69,6 @@ Board::Board(ControlPanel *parent) :parent(parent),
     currentPlayer = 2;
     playerGoesFirst = 2;
     currentPiece = new Piece(currentPlayer, this);
-    this->startTimer(1000 / 30);
 }
 float Board::OFFSET_LEFT(){return (-1.5/1574.0)*(originalWidth);}
 float Board::COL_WIDTH(){return float((169.0/1574.0)*(originalWidth));}
@@ -77,11 +76,6 @@ float Board::COL_HEIGHT(){return COL_WIDTH();}
 float Board::H_SPACING(){return float((40.6/1574)*(originalWidth));}
 float Board::V_SPACING(){return float((21.0/1260.0)*(originalHeight));}
 float Board::OFFSET_BOTTOM(){return float((68.0/1260)*(originalHeight));}
-
-void Board::timerEvent(QTimerEvent * te)
-{
-    //this->update();
-}
 
 void Board::place(int col, int row)
 {
